@@ -364,6 +364,7 @@ Completed:
 
 Potential next improvements:
 
+- [x] Add GitHub release workflow for tagged binary releases
 - [ ] Publish GitHub release notes and binaries for `v0.1.0`
 - [ ] Add packaged install instructions (`cargo install`, Homebrew, or prebuilt binaries)
 - [x] Add configuration file support for repeated audits
