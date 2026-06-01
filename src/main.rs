@@ -35,6 +35,11 @@ async fn main() -> Result<()> {
             if args.timeout == 0 {
                 anyhow::bail!("--timeout must be greater than 0");
             }
+            if let Some(threshold) = args.agent_ready_fail_under {
+                if threshold > 100 {
+                    anyhow::bail!("--agent-ready-fail-under must be between 0 and 100");
+                }
+            }
 
             println!("Checking sitemap: {}", args.sitemap_url);
             println!("Concurrency: {}", args.concurrency);
@@ -121,8 +126,7 @@ async fn main() -> Result<()> {
                 if let Some(path) = args.agent_ready_export_json.as_deref() {
                     export_agent_readiness_json(path, &agent_report)?;
                     println!(
-                        "
-Agent readiness JSON report written to: {}",
+                        "\nAgent readiness JSON report written to: {}",
                         path.display()
                     );
                 }
@@ -130,16 +134,12 @@ Agent readiness JSON report written to: {}",
                 if let Some(path) = args.agent_ready_export_html.as_deref() {
                     export_agent_readiness_html(path, &agent_report)?;
                     println!(
-                        "
-Agent readiness HTML report written to: {}",
+                        "\nAgent readiness HTML report written to: {}",
                         path.display()
                     );
                 }
 
                 if let Some(threshold) = args.agent_ready_fail_under {
-                    if threshold > 100 {
-                        anyhow::bail!("--agent-ready-fail-under must be between 0 and 100");
-                    }
                     if score_percent(&agent_report) < threshold {
                         std::process::exit(3);
                     }
