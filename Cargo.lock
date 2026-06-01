@@ -1174,6 +1174,7 @@ dependencies = [
  "anyhow",
  "clap",
  "csv",
+ "flate2",
  "futures",
  "quick-xml",
  "reqwest",

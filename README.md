@@ -13,6 +13,7 @@ Current features:
 - `sitepulse check <SITEMAP_URL>` command
 - Standard sitemap parsing
 - Sitemap index support
+- Gzip sitemap support (`.xml.gz`)
 - Maximum sitemap index depth: `2`
 - Extract URLs from `<loc>...</loc>` entries
 - Deduplicate repeated URLs
@@ -253,6 +254,7 @@ Completed:
 - [x] HTML report export
 - [x] CI-friendly `--fail-on-errors` option
 - [x] Sitemap index support
+- [x] Gzip sitemap support
 - [x] Slow URL list
 - [x] README
 - [x] Integration tests with a local HTTP server
@@ -262,7 +264,6 @@ Potential next improvements:
 - [ ] Robots.txt checks
 - [ ] Canonical URL checks
 - [ ] Title/meta description checks
-- [ ] Explicit tests for gzip sitemap support
 
 ## Notes
 

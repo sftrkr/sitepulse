@@ -3,10 +3,12 @@ use quick_xml::events::Event;
 use quick_xml::Reader;
 use reqwest::Client;
 use std::collections::BTreeSet;
+use std::io::Read;
 use std::time::Duration;
 
 const USER_AGENT: &str = "sitepulse/0.1 (+https://example.local)";
 const MAX_DEPTH: usize = 2;
+const MAX_SITEMAP_BYTES: u64 = 50 * 1024 * 1024;
 
 pub async fn discover_urls(sitemap_url: &str, timeout_secs: u64) -> Result<Vec<String>> {
     let client = Client::builder()
@@ -66,10 +68,39 @@ async fn download_xml(client: &Client, url: &str) -> Result<String> {
         return Err(anyhow!("sitemap download failed for {url}: HTTP {status}"));
     }
 
-    response
-        .text()
+    let bytes = response
+        .bytes()
         .await
-        .with_context(|| format!("failed to read sitemap body: {url}"))
+        .with_context(|| format!("failed to read sitemap body: {url}"))?;
+
+    if bytes.len() as u64 > MAX_SITEMAP_BYTES {
+        return Err(anyhow!(
+            "sitemap body is too large for {url}: {} bytes",
+            bytes.len()
+        ));
+    }
+
+    decode_sitemap_body(url, &bytes)
+}
+
+fn decode_sitemap_body(url: &str, bytes: &[u8]) -> Result<String> {
+    if is_gzip(url, bytes) {
+        decode_gzip(bytes).with_context(|| format!("failed to decode gzip sitemap: {url}"))
+    } else {
+        String::from_utf8(bytes.to_vec())
+            .with_context(|| format!("sitemap is not valid UTF-8: {url}"))
+    }
+}
+
+fn is_gzip(url: &str, bytes: &[u8]) -> bool {
+    url.ends_with(".gz") || bytes.starts_with(&[0x1f, 0x8b])
+}
+
+fn decode_gzip(bytes: &[u8]) -> Result<String> {
+    let mut decoder = flate2::read::GzDecoder::new(bytes);
+    let mut output = String::new();
+    decoder.read_to_string(&mut output)?;
+    Ok(output)
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -120,6 +151,9 @@ fn parse_sitemap_locs(xml: &str) -> Result<ParsedSitemap> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use flate2::write::GzEncoder;
+    use flate2::Compression;
+    use std::io::Write;
 
     #[test]
     fn parses_urlset() {
@@ -135,5 +169,28 @@ mod tests {
         let parsed = parse_sitemap_locs(xml).unwrap();
         assert!(parsed.is_index);
         assert_eq!(parsed.locs, vec!["https://example.com/a.xml"]);
+    }
+
+    #[test]
+    fn decodes_gzip_sitemap_by_extension() {
+        let xml = r#"<urlset><url><loc>https://example.com/</loc></url></urlset>"#;
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(xml.as_bytes()).unwrap();
+        let compressed = encoder.finish().unwrap();
+
+        let decoded =
+            decode_sitemap_body("https://example.com/sitemap.xml.gz", &compressed).unwrap();
+        assert_eq!(decoded, xml);
+    }
+
+    #[test]
+    fn decodes_gzip_sitemap_by_magic_header() {
+        let xml = r#"<urlset><url><loc>https://example.com/</loc></url></urlset>"#;
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(xml.as_bytes()).unwrap();
+        let compressed = encoder.finish().unwrap();
+
+        let decoded = decode_sitemap_body("https://example.com/sitemap.xml", &compressed).unwrap();
+        assert_eq!(decoded, xml);
     }
 }
