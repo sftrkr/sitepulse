@@ -26,6 +26,7 @@ Current features:
 - Option to show only errors
 - Retry support for network errors and `5xx` responses
 - GET/HEAD check method selection
+- Same-host filtering option
 - Maximum URL limit option
 - CSV export
 - JSON export
@@ -98,6 +99,7 @@ Options:
 | `--fail-on-errors` | Exit with code `2` if any `4xx`, `5xx`, timeout, or network error is found | Disabled |
 | `--retries <N>` | Retry failed requests and `5xx` responses | `0` |
 | `--max-urls <N>` | Limit how many discovered URLs are checked | None |
+| `--same-host-only` | Only check URLs whose host matches the sitemap URL host | Disabled |
 
 Examples:
 
@@ -129,6 +131,10 @@ cargo run -- check https://example.com/sitemap.xml --retries 2
 cargo run -- check https://example.com/sitemap.xml --max-urls 100
 ```
 
+```bash
+cargo run -- check https://example.com/sitemap.xml --same-host-only
+```
+
 Multiple options can be used together:
 
 ```bash
@@ -138,6 +144,7 @@ cargo run -- check https://example.com/sitemap.xml \
   --method head \
   --retries 2 \
   --max-urls 1000 \
+  --same-host-only \
   --only-errors \
   --export report.csv \
   --export-json report.json \
@@ -258,6 +265,7 @@ Completed:
 - [x] `--only-errors`
 - [x] Retry support
 - [x] GET/HEAD check method selection
+- [x] Same-host filtering option
 - [x] Maximum URL limit option
 - [x] CSV export
 - [x] JSON export

@@ -59,6 +59,10 @@ pub struct CheckArgs {
     #[arg(long)]
     pub max_urls: Option<usize>,
 
+    /// Only check URLs whose host matches the sitemap URL host
+    #[arg(long)]
+    pub same_host_only: bool,
+
     /// Exit with a non-zero status code if any error is found
     #[arg(long)]
     pub fail_on_errors: bool,

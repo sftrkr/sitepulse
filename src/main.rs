@@ -13,6 +13,7 @@ use export::{export_csv, export_html, export_json};
 use models::RequestMethod;
 use report::{print_results, print_summary, summarize};
 use sitemap::discover_urls;
+use url::Url;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -41,11 +42,20 @@ async fn main() -> Result<()> {
 
             let mut urls = discover_urls(&args.sitemap_url, args.timeout).await?;
             let discovered_count = urls.len();
+
+            if args.same_host_only {
+                urls = filter_same_host(urls, &args.sitemap_url)?;
+            }
+
+            let filtered_count = urls.len();
             if let Some(max_urls) = args.max_urls {
                 urls.truncate(max_urls);
             }
             println!("Discovered URLs: {}", discovered_count);
-            if urls.len() != discovered_count {
+            if args.same_host_only {
+                println!("After same-host filter: {}", filtered_count);
+            }
+            if urls.len() != filtered_count {
                 println!("Checking URLs: {}", urls.len());
             }
             println!();
@@ -80,4 +90,49 @@ async fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+fn filter_same_host(urls: Vec<String>, sitemap_url: &str) -> Result<Vec<String>> {
+    let sitemap_host = Url::parse(sitemap_url)
+        .map_err(|err| anyhow::anyhow!("invalid sitemap URL: {err}"))?
+        .host_str()
+        .map(str::to_string)
+        .ok_or_else(|| anyhow::anyhow!("sitemap URL does not include a host"))?;
+
+    Ok(urls
+        .into_iter()
+        .filter(|url| {
+            Url::parse(url)
+                .ok()
+                .and_then(|parsed| parsed.host_str().map(str::to_string))
+                .map(|host| host.eq_ignore_ascii_case(&sitemap_host))
+                .unwrap_or(false)
+        })
+        .collect())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn same_host_filter_keeps_only_matching_hosts() {
+        let urls = vec![
+            "https://example.com/a".to_string(),
+            "https://cdn.example.com/a".to_string(),
+            "https://example.org/a".to_string(),
+            "not-a-url".to_string(),
+            "https://EXAMPLE.com/b".to_string(),
+        ];
+
+        let filtered = filter_same_host(urls, "https://example.com/sitemap.xml").unwrap();
+
+        assert_eq!(
+            filtered,
+            vec![
+                "https://example.com/a".to_string(),
+                "https://EXAMPLE.com/b".to_string()
+            ]
+        );
+    }
 }
