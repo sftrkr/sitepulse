@@ -372,12 +372,12 @@ Completed:
 - [x] Add basic per-request politeness delay
 - [x] Add JUnit and SARIF CI exports
 
+- [x] Richer structured data validation for JSON-LD schema types
 Potential next improvements:
 
 - [ ] Publish GitHub release notes and binaries for `v0.1.0`
 - [ ] Add Homebrew formula or prebuilt release binaries
 - [ ] Add advanced per-host rate limiting controls
-- [x] Add richer structured data validation for JSON-LD schema types
 
 ## Notes
 
