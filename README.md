@@ -334,10 +334,10 @@ Potential next improvements:
     - [x] Detect JSON-LD structured data
     - [x] Report semantic HTML signals such as `<main>` and `<h1>`
   - [ ] Commerce readiness
-    - [ ] Check x402
-    - [ ] Check MPP
-    - [ ] Check UCP
-    - [ ] Check ACP
+    - [x] Check x402
+    - [x] Check MPP
+    - [x] Check UCP
+    - [x] Check ACP
   - [ ] Scoring/reporting
     - [x] Provide an agent readiness score
     - [x] Provide PASS/WARN/FAIL checklist

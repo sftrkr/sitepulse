@@ -59,6 +59,7 @@ pub async fn audit_agent_readiness(
     let homepage_headers = fetch_homepage_headers(&client, site_url.as_str()).await;
     let markdown = fetch_markdown_negotiation(&client, site_url.as_str()).await;
     let protocol_discovery = fetch_protocol_discovery(&client, &site_url).await;
+    let commerce_discovery = fetch_commerce_discovery(&client, &site_url).await;
     let mut checks = Vec::new();
 
     checks.push(match &robots {
@@ -147,6 +148,7 @@ pub async fn audit_agent_readiness(
     ));
     checks.push(check_markdown_negotiation(&markdown));
     checks.extend(check_protocol_discovery(&protocol_discovery));
+    checks.extend(check_commerce_discovery(&commerce_discovery));
 
     match &homepage {
         FetchResult::Ok(body) => {
@@ -551,6 +553,108 @@ fn check_protocol_discovery(results: &[ProtocolEndpointResult]) -> Vec<AgentRead
                 0,
                 5,
             ),
+        })
+        .collect()
+}
+
+#[derive(Debug)]
+struct CommerceEndpointResult {
+    name: &'static str,
+    paths: Vec<&'static str>,
+    matched_path: Option<&'static str>,
+    status: Option<u16>,
+    error: Option<String>,
+}
+
+async fn fetch_commerce_discovery(client: &Client, site_url: &Url) -> Vec<CommerceEndpointResult> {
+    let standards: [(&str, &[&str]); 4] = [
+        (
+            "x402",
+            &["/.well-known/x402", "/.well-known/x402.json", "/x402"],
+        ),
+        (
+            "MPP",
+            &["/.well-known/mpp", "/.well-known/mpp.json", "/mpp"],
+        ),
+        (
+            "UCP",
+            &["/.well-known/ucp", "/.well-known/ucp.json", "/ucp"],
+        ),
+        (
+            "ACP",
+            &["/.well-known/acp", "/.well-known/acp.json", "/acp"],
+        ),
+    ];
+
+    let mut results = Vec::new();
+    for (name, paths) in standards {
+        let mut last_status = None;
+        let mut last_error = None;
+        let mut matched_path = None;
+
+        for path in paths {
+            let url = match site_url.join(path) {
+                Ok(url) => url,
+                Err(error) => {
+                    last_error = Some(error.to_string());
+                    continue;
+                }
+            };
+
+            match client.head(url.as_str()).send().await {
+                Ok(response) => {
+                    let status = response.status().as_u16();
+                    last_status = Some(status);
+                    if (200..=299).contains(&status) {
+                        matched_path = Some(*path);
+                        break;
+                    }
+                }
+                Err(error) => last_error = Some(error.to_string()),
+            }
+        }
+
+        results.push(CommerceEndpointResult {
+            name,
+            paths: paths.to_vec(),
+            matched_path,
+            status: last_status,
+            error: last_error,
+        });
+    }
+
+    results
+}
+
+fn check_commerce_discovery(results: &[CommerceEndpointResult]) -> Vec<AgentReadinessCheck> {
+    results
+        .iter()
+        .map(|result| {
+            if let Some(path) = result.matched_path {
+                check_pass(
+                    result.name,
+                    &format!("agentic commerce signal found at {path}"),
+                    5,
+                )
+            } else if let Some(status) = result.status {
+                check_warn(
+                    result.name,
+                    &format!("no agentic commerce signal found; last checked status HTTP {status}"),
+                    0,
+                    5,
+                )
+            } else {
+                check_warn(
+                    result.name,
+                    &format!(
+                        "agentic commerce signal could not be checked across {} path(s): {}",
+                        result.paths.len(),
+                        result.error.as_deref().unwrap_or("unknown error")
+                    ),
+                    0,
+                    5,
+                )
+            }
         })
         .collect()
 }
