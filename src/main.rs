@@ -1,6 +1,7 @@
 mod checker;
 mod cli;
 mod export;
+mod meta;
 mod models;
 mod report;
 mod robots;
@@ -39,6 +40,10 @@ async fn main() -> Result<()> {
 
             println!("Timeout: {}s", args.timeout);
             println!("Method: {}", method);
+            println!(
+                "Analyze meta: {}",
+                if args.analyze_meta { "yes" } else { "no" }
+            );
             println!("Retries: {}", args.retries);
             println!();
 
@@ -71,8 +76,15 @@ async fn main() -> Result<()> {
             }
             println!();
 
-            let results =
-                check_urls(&urls, args.concurrency, args.timeout, args.retries, method).await;
+            let results = check_urls(
+                &urls,
+                args.concurrency,
+                args.timeout,
+                args.retries,
+                method,
+                args.analyze_meta,
+            )
+            .await;
             print_results(&results, args.only_errors);
 
             if let Some(path) = args.export.as_deref() {

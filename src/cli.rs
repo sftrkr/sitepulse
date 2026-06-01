@@ -35,6 +35,10 @@ pub struct CheckArgs {
     #[arg(long, value_enum, default_value_t = HttpMethodArg::Get)]
     pub method: HttpMethodArg,
 
+    /// Include page title and meta description in results. Uses GET even when --method=head.
+    #[arg(long)]
+    pub analyze_meta: bool,
+
     /// Print only HTTP/network errors and 4xx/5xx responses
     #[arg(long)]
     pub only_errors: bool,

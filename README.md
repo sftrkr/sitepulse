@@ -26,6 +26,7 @@ Current features:
 - Option to show only errors
 - Retry support for network errors and `5xx` responses
 - GET/HEAD check method selection
+- Optional title and meta description extraction
 - Same-host filtering option
 - Optional robots.txt filtering
 - Maximum URL limit option
@@ -93,6 +94,7 @@ Options:
 | `--concurrency <N>` | Number of concurrent HTTP checks | `10` |
 | `--timeout <SECONDS>` | Request timeout in seconds | `10` |
 | `--method <METHOD>` | HTTP method for URL checks: `get` or `head` | `get` |
+| `--analyze-meta` | Extract page title and meta description. Uses GET even with `--method=head` | Disabled |
 | `--only-errors` | Show only network errors and `4xx`/`5xx` responses | Disabled |
 | `--export <FILE>` | Write results to a CSV file | None |
 | `--export-json <FILE>` | Write results to a JSON file | None |
@@ -115,6 +117,10 @@ cargo run -- check https://example.com/sitemap.xml --timeout 15
 
 ```bash
 cargo run -- check https://example.com/sitemap.xml --method head
+```
+
+```bash
+cargo run -- check https://example.com/sitemap.xml --analyze-meta
 ```
 
 ```bash
@@ -148,6 +154,7 @@ cargo run -- check https://example.com/sitemap.xml \
   --concurrency 20 \
   --timeout 10 \
   --method head \
+  --analyze-meta \
   --retries 2 \
   --max-urls 1000 \
   --same-host-only \
@@ -165,6 +172,7 @@ Checking sitemap: https://example.com/sitemap.xml
 Concurrency: 20
 Timeout: 10s
 Method: HEAD
+Analyze meta: yes
 Retries: 2
 
 Discovered URLs: 1240
@@ -220,6 +228,8 @@ CSV, JSON, and HTML result fields include:
 - `error`
 - `attempts`
 - `method`
+- `title`
+- `meta_description`
 
 ## Project structure
 
@@ -272,6 +282,7 @@ Completed:
 - [x] `--only-errors`
 - [x] Retry support
 - [x] GET/HEAD check method selection
+- [x] Optional title and meta description extraction
 - [x] Same-host filtering option
 - [x] Optional robots.txt filtering
 - [x] Maximum URL limit option
@@ -288,7 +299,6 @@ Completed:
 Potential next improvements:
 
 - [ ] Canonical URL checks
-- [ ] Title/meta description checks
 
 ## Notes
 

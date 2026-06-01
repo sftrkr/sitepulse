@@ -26,6 +26,8 @@ pub struct UrlCheckResult {
     pub error: Option<String>,
     pub attempts: usize,
     pub method: String,
+    pub title: Option<String>,
+    pub meta_description: Option<String>,
 }
 
 impl UrlCheckResult {

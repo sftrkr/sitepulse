@@ -1,3 +1,4 @@
+use crate::meta::extract_page_meta;
 use crate::models::{RequestMethod, UrlCheckResult};
 use futures::stream::{self, StreamExt};
 use reqwest::redirect::Policy;
@@ -15,6 +16,7 @@ pub async fn check_urls(
     timeout_secs: u64,
     retries: usize,
     method: RequestMethod,
+    analyze_meta: bool,
 ) -> Vec<UrlCheckResult> {
     let client = Client::builder()
         .user_agent(USER_AGENT)
@@ -27,7 +29,7 @@ pub async fn check_urls(
         .map(|url| {
             let client = client.clone();
             let method = method.clone();
-            async move { check_url_with_retries(&client, url, retries, method).await }
+            async move { check_url_with_retries(&client, url, retries, method, analyze_meta).await }
         })
         .buffer_unordered(concurrency)
         .collect()
@@ -39,12 +41,13 @@ async fn check_url_with_retries(
     url: String,
     retries: usize,
     method: RequestMethod,
+    analyze_meta: bool,
 ) -> UrlCheckResult {
     let max_attempts = retries + 1;
     let mut attempt = 1;
 
     loop {
-        let result = check_url_once(client, url.clone(), attempt, &method).await;
+        let result = check_url_once(client, url.clone(), attempt, &method, analyze_meta).await;
         if attempt >= max_attempts || !should_retry(&result) {
             return result;
         }
@@ -64,46 +67,66 @@ async fn check_url_once(
     url: String,
     attempts: usize,
     method: &RequestMethod,
+    analyze_meta: bool,
 ) -> UrlCheckResult {
     let started = Instant::now();
-    let request = match method {
+    let effective_method = if analyze_meta {
+        &RequestMethod::Get
+    } else {
+        method
+    };
+    let request = match effective_method {
         RequestMethod::Get => client.get(&url),
         RequestMethod::Head => client.head(&url),
     };
 
     match request.send().await {
         Ok(response) => {
-            let method_used =
-                if matches!(method, RequestMethod::Head) && response.status().as_u16() == 405 {
-                    RequestMethod::Get
-                } else {
-                    method.clone()
-                };
-            let response =
-                if matches!(method, RequestMethod::Head) && response.status().as_u16() == 405 {
-                    match client.get(&url).send().await {
-                        Ok(response) => response,
-                        Err(err) => {
-                            return UrlCheckResult {
-                                url: url.clone(),
-                                status: None,
-                                time_ms: started.elapsed().as_millis(),
-                                redirected: false,
-                                final_url: url,
-                                error: Some(err.to_string()),
-                                attempts,
-                                method: RequestMethod::Get.to_string(),
-                            };
-                        }
+            let method_used = if matches!(effective_method, RequestMethod::Head)
+                && response.status().as_u16() == 405
+            {
+                RequestMethod::Get
+            } else {
+                method.clone()
+            };
+            let response = if matches!(effective_method, RequestMethod::Head)
+                && response.status().as_u16() == 405
+            {
+                match client.get(&url).send().await {
+                    Ok(response) => response,
+                    Err(err) => {
+                        return UrlCheckResult {
+                            url: url.clone(),
+                            status: None,
+                            time_ms: started.elapsed().as_millis(),
+                            redirected: false,
+                            final_url: url,
+                            error: Some(err.to_string()),
+                            attempts,
+                            method: RequestMethod::Get.to_string(),
+                            title: None,
+                            meta_description: None,
+                        };
                     }
-                } else {
-                    response
-                };
+                }
+            } else {
+                response
+            };
 
-            let elapsed = started.elapsed().as_millis();
             let status = response.status().as_u16();
             let final_url = response.url().to_string();
             let redirected = final_url != url;
+            let page_meta = if analyze_meta {
+                response
+                    .text()
+                    .await
+                    .ok()
+                    .map(|body| extract_page_meta(&body))
+                    .unwrap_or_default()
+            } else {
+                Default::default()
+            };
+            let elapsed = started.elapsed().as_millis();
             UrlCheckResult {
                 url,
                 status: Some(status),
@@ -113,6 +136,8 @@ async fn check_url_once(
                 error: None,
                 attempts,
                 method: method_used.to_string(),
+                title: page_meta.title,
+                meta_description: page_meta.description,
             }
         }
         Err(err) => UrlCheckResult {
@@ -123,7 +148,9 @@ async fn check_url_once(
             final_url: url,
             error: Some(err.to_string()),
             attempts,
-            method: method.to_string(),
+            method: effective_method.to_string(),
+            title: None,
+            meta_description: None,
         },
     }
 }
@@ -142,6 +169,8 @@ mod tests {
             error: error.map(str::to_string),
             attempts: 1,
             method: "GET".to_string(),
+            title: None,
+            meta_description: None,
         }
     }
 
