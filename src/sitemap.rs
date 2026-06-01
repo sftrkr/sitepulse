@@ -12,10 +12,6 @@ const MAX_DEPTH: usize = 2;
 const MAX_SITEMAP_BYTES: u64 = 50 * 1024 * 1024;
 const SITEMAP_RETRY_BACKOFF_MS: u64 = 500;
 
-pub async fn discover_urls(sitemap_url: &str, timeout_secs: u64) -> Result<Vec<String>> {
-    discover_urls_with_retries(sitemap_url, timeout_secs, 0).await
-}
-
 pub async fn discover_urls_with_retries(
     sitemap_url: &str,
     timeout_secs: u64,
