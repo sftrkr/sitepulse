@@ -299,6 +299,17 @@ Completed:
 
 Potential next improvements:
 
+- [ ] Agent readiness audit (`--agent-ready`)
+  - [ ] Check `robots.txt` accessibility
+  - [ ] Detect whether generic crawlers or known AI agents are blocked
+  - [ ] Check `llms.txt` and `llms-full.txt` availability
+  - [ ] Check whether sitemap URLs are declared in `robots.txt`
+  - [ ] Analyze homepage title, meta description, canonical URL, and OpenGraph metadata
+  - [ ] Detect JSON-LD structured data
+  - [ ] Report semantic HTML signals such as `<main>` and `<h1>`
+  - [ ] Provide an agent readiness score and PASS/WARN/FAIL checklist
+  - [ ] Add JSON/HTML export support for agent readiness results
+
 
 ## Notes
 
