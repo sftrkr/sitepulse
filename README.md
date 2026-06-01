@@ -309,12 +309,12 @@ Potential next improvements:
   - [ ] Discoverability
     - [x] Check `robots.txt` accessibility
     - [x] Check sitemap directives in `robots.txt`
-    - [ ] Check homepage discovery `Link` headers
+    - [x] Check homepage discovery `Link` headers
     - [ ] Check DNS for AI Discovery (DNS-AID) records
   - [ ] Content accessibility
     - [x] Check `llms.txt` availability
     - [x] Check `llms-full.txt` availability
-    - [ ] Check Markdown content negotiation
+    - [x] Check Markdown content negotiation
   - [ ] Bot access control
     - [x] Detect AI bot rules in `robots.txt`
     - [ ] Detect whether known AI agents are blocked or allowed

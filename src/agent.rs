@@ -1,5 +1,6 @@
 use crate::meta::extract_page_meta;
 use anyhow::{Context, Result};
+use reqwest::header::{ACCEPT, CONTENT_TYPE, LINK};
 use reqwest::Client;
 use std::time::Duration;
 use url::Url;
@@ -55,6 +56,8 @@ pub async fn audit_agent_readiness(
     let llms = fetch_optional_text(&client, site_url.join("/llms.txt")?.as_str()).await;
     let llms_full = fetch_optional_text(&client, site_url.join("/llms-full.txt")?.as_str()).await;
     let homepage = fetch_optional_text(&client, site_url.as_str()).await;
+    let homepage_links = fetch_link_headers(&client, site_url.as_str()).await;
+    let markdown = fetch_markdown_negotiation(&client, site_url.as_str()).await;
     let mut checks = Vec::new();
 
     checks.push(match &robots {
@@ -129,6 +132,8 @@ pub async fn audit_agent_readiness(
 
     checks.push(check_text_file("llms.txt", &llms, 20));
     checks.push(check_text_file("llms-full.txt", &llms_full, 10));
+    checks.push(check_link_headers(&homepage_links));
+    checks.push(check_markdown_negotiation(&markdown));
 
     match &homepage {
         FetchResult::Ok(body) => {
@@ -226,6 +231,158 @@ async fn fetch_optional_text(client: &Client, url: &str) -> FetchResult {
         Ok(r) => FetchResult::HttpStatus(r.status().as_u16()),
         Err(e) => FetchResult::NetworkError(e.to_string()),
     }
+}
+
+#[derive(Debug)]
+struct HeaderFetchResult {
+    status: Option<u16>,
+    links: Vec<String>,
+    error: Option<String>,
+}
+
+#[derive(Debug)]
+struct MarkdownFetchResult {
+    status: Option<u16>,
+    content_type: Option<String>,
+    body: Option<String>,
+    error: Option<String>,
+}
+
+async fn fetch_link_headers(client: &Client, url: &str) -> HeaderFetchResult {
+    match client.head(url).send().await {
+        Ok(response) => {
+            let status = response.status().as_u16();
+            let links = response
+                .headers()
+                .get_all(LINK)
+                .iter()
+                .filter_map(|value| value.to_str().ok().map(str::to_string))
+                .collect();
+            HeaderFetchResult {
+                status: Some(status),
+                links,
+                error: None,
+            }
+        }
+        Err(error) => HeaderFetchResult {
+            status: None,
+            links: Vec::new(),
+            error: Some(error.to_string()),
+        },
+    }
+}
+
+async fn fetch_markdown_negotiation(client: &Client, url: &str) -> MarkdownFetchResult {
+    match client
+        .get(url)
+        .header(ACCEPT, "text/markdown, text/plain;q=0.9, */*;q=0.1")
+        .send()
+        .await
+    {
+        Ok(response) => {
+            let status = response.status().as_u16();
+            let content_type = response
+                .headers()
+                .get(CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .map(str::to_string);
+            let body = response.text().await.ok();
+            MarkdownFetchResult {
+                status: Some(status),
+                content_type,
+                body,
+                error: None,
+            }
+        }
+        Err(error) => MarkdownFetchResult {
+            status: None,
+            content_type: None,
+            body: None,
+            error: Some(error.to_string()),
+        },
+    }
+}
+
+fn check_link_headers(result: &HeaderFetchResult) -> AgentReadinessCheck {
+    if !result.links.is_empty() {
+        check_pass(
+            "Link headers",
+            &format!("homepage exposes {} Link header(s)", result.links.len()),
+            10,
+        )
+    } else if let Some(error) = &result.error {
+        check_warn(
+            "Link headers",
+            &format!("homepage Link headers could not be checked: {error}"),
+            0,
+            10,
+        )
+    } else if let Some(status) = result.status {
+        check_warn(
+            "Link headers",
+            &format!("homepage returned HTTP {status} with no Link headers"),
+            0,
+            10,
+        )
+    } else {
+        check_warn("Link headers", "homepage exposes no Link headers", 0, 10)
+    }
+}
+
+fn check_markdown_negotiation(result: &MarkdownFetchResult) -> AgentReadinessCheck {
+    let content_type_is_markdown = result
+        .content_type
+        .as_deref()
+        .map(|value| value.to_ascii_lowercase().contains("markdown"))
+        .unwrap_or(false);
+    let body_looks_markdown = result
+        .body
+        .as_deref()
+        .map(looks_like_markdown)
+        .unwrap_or(false);
+    if content_type_is_markdown || body_looks_markdown {
+        check_pass(
+            "Markdown negotiation",
+            "homepage returns Markdown-like content for text/markdown Accept",
+            15,
+        )
+    } else if let Some(error) = &result.error {
+        check_warn(
+            "Markdown negotiation",
+            &format!("Markdown negotiation could not be checked: {error}"),
+            0,
+            15,
+        )
+    } else if let Some(status) = result.status {
+        check_warn(
+            "Markdown negotiation",
+            &format!("homepage returned HTTP {status} but not Markdown content"),
+            0,
+            15,
+        )
+    } else {
+        check_warn(
+            "Markdown negotiation",
+            "homepage did not return Markdown content",
+            0,
+            15,
+        )
+    }
+}
+
+fn looks_like_markdown(body: &str) -> bool {
+    let trimmed = body.trim_start().to_ascii_lowercase();
+    !trimmed.starts_with("<!doctype html")
+        && !trimmed.starts_with("<html")
+        && (trimmed.starts_with('#')
+            || trimmed.contains(
+                "
+#",
+            )
+            || trimmed.contains(
+                "
+- ",
+            ))
 }
 
 fn site_root_url(input: &str) -> Result<Url> {
@@ -378,5 +535,15 @@ mod tests {
         assert!(has_json_ld(html));
         assert!(has_tag(html, "main"));
         assert!(has_tag(html, "h1"));
+    }
+
+    #[test]
+    fn detects_markdown_like_content() {
+        assert!(looks_like_markdown(
+            "# Title
+
+- item"
+        ));
+        assert!(!looks_like_markdown("<!doctype html><html></html>"));
     }
 }
