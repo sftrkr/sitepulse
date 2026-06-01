@@ -1,5 +1,7 @@
 use crate::meta::extract_page_meta;
 use anyhow::{Context, Result};
+use hickory_resolver::config::{ResolverConfig, ResolverOpts};
+use hickory_resolver::TokioAsyncResolver;
 use reqwest::header::{HeaderMap, HeaderName, ACCEPT, CONTENT_TYPE, LINK};
 use reqwest::Client;
 use serde::Serialize;
@@ -61,6 +63,7 @@ pub async fn audit_agent_readiness(
     let markdown = fetch_markdown_negotiation(&client, site_url.as_str()).await;
     let protocol_discovery = fetch_protocol_discovery(&client, &site_url).await;
     let commerce_discovery = fetch_commerce_discovery(&client, &site_url).await;
+    let dns_aid = fetch_dns_aid(&site_url).await;
     let mut checks = Vec::new();
 
     checks.push(match &robots {
@@ -143,6 +146,7 @@ pub async fn audit_agent_readiness(
     checks.push(check_text_file("llms.txt", &llms, 20));
     checks.push(check_text_file("llms-full.txt", &llms_full, 10));
     checks.push(check_link_headers(&homepage_headers));
+    checks.push(check_dns_aid(&dns_aid));
     checks.push(check_content_signals(
         &homepage_headers,
         homepage_body(&homepage),
@@ -261,6 +265,91 @@ async fn fetch_optional_text(client: &Client, url: &str) -> FetchResult {
         },
         Ok(r) => FetchResult::HttpStatus(r.status().as_u16()),
         Err(e) => FetchResult::NetworkError(e.to_string()),
+    }
+}
+
+#[derive(Debug)]
+struct DnsAidResult {
+    records: Vec<String>,
+    checked_names: Vec<String>,
+    error: Option<String>,
+}
+
+async fn fetch_dns_aid(site_url: &Url) -> DnsAidResult {
+    let Some(host) = site_url.host_str() else {
+        return DnsAidResult {
+            records: Vec::new(),
+            checked_names: Vec::new(),
+            error: Some("site URL has no host".to_string()),
+        };
+    };
+
+    let names = vec![
+        format!("_agent.{host}"),
+        format!("_agents.{host}"),
+        format!("_ai.{host}"),
+    ];
+    let resolver = TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
+    let mut records = Vec::new();
+    let mut last_error = None;
+
+    for name in &names {
+        match resolver.txt_lookup(name.as_str()).await {
+            Ok(lookup) => {
+                for record in lookup.iter() {
+                    let value = record
+                        .txt_data()
+                        .iter()
+                        .map(|bytes| String::from_utf8_lossy(bytes).to_string())
+                        .collect::<Vec<_>>()
+                        .join("");
+                    if !value.trim().is_empty() {
+                        records.push(format!("{name}: {value}"));
+                    }
+                }
+            }
+            Err(error) => last_error = Some(error.to_string()),
+        }
+    }
+
+    DnsAidResult {
+        records,
+        checked_names: names,
+        error: last_error,
+    }
+}
+
+fn check_dns_aid(result: &DnsAidResult) -> AgentReadinessCheck {
+    if !result.records.is_empty() {
+        check_pass(
+            "DNS-AID",
+            &format!(
+                "DNS AI discovery TXT record(s) found: {}",
+                result.records.len()
+            ),
+            10,
+        )
+    } else if let Some(error) = &result.error {
+        check_warn(
+            "DNS-AID",
+            &format!(
+                "no DNS AI discovery TXT records found across {} name(s); last resolver message: {}",
+                result.checked_names.len(),
+                error
+            ),
+            0,
+            10,
+        )
+    } else {
+        check_warn(
+            "DNS-AID",
+            &format!(
+                "no DNS AI discovery TXT records found across {} name(s)",
+                result.checked_names.len()
+            ),
+            0,
+            10,
+        )
     }
 }
 
@@ -1036,6 +1125,17 @@ fn escape_html(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn dns_aid_check_passes_with_records() {
+        let result = DnsAidResult {
+            records: vec!["_agent.example.com: aid=v1".to_string()],
+            checked_names: vec!["_agent.example.com".to_string()],
+            error: None,
+        };
+        let check = check_dns_aid(&result);
+        assert_eq!(check.status, AgentCheckStatus::Pass);
+    }
+
     #[test]
     fn calculates_score_percent() {
         let report = AgentReadinessReport {

@@ -310,12 +310,12 @@ Completed:
 
 Potential next improvements:
 
-- [ ] Expanded agent readiness audit (`--agent-ready`)
-  - [ ] Discoverability
+- [x] Expanded agent readiness audit (`--agent-ready`)
+  - [x] Discoverability
     - [x] Check `robots.txt` accessibility
     - [x] Check sitemap directives in `robots.txt`
     - [x] Check homepage discovery `Link` headers
-    - [ ] Check DNS for AI Discovery (DNS-AID) records
+    - [x] Check DNS for AI Discovery (DNS-AID) records
   - [x] Content accessibility
     - [x] Check `llms.txt` availability
     - [x] Check `llms-full.txt` availability
