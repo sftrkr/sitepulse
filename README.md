@@ -330,7 +330,7 @@ Potential next improvements:
     - [ ] Check OAuth Protected Resource metadata
     - [ ] Check `auth.md`
   - [ ] Page intelligence signals
-    - [ ] Analyze homepage title, meta description, canonical URL, and OpenGraph metadata
+    - [x] Analyze homepage title, meta description, canonical URL, and OpenGraph metadata
     - [x] Detect JSON-LD structured data
     - [x] Report semantic HTML signals such as `<main>` and `<h1>`
   - [ ] Commerce readiness

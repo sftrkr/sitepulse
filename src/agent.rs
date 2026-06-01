@@ -159,6 +159,7 @@ pub async fn audit_agent_readiness(
             } else {
                 check_warn("Canonical URL", "homepage canonical URL missing", 0, 10)
             });
+            checks.push(check_open_graph(body));
             checks.push(if has_json_ld(body) {
                 check_pass("JSON-LD", "JSON-LD structured data found", 10)
             } else {
@@ -499,6 +500,35 @@ fn robots_group_disallows_root(body: &str, agent: &str) -> bool {
     }
     false
 }
+fn check_open_graph(html: &str) -> AgentReadinessCheck {
+    let lower = html.to_ascii_lowercase();
+    let required = ["og:title", "og:description", "og:url", "og:type"];
+    let found = required
+        .iter()
+        .filter(|property| {
+            lower.contains(&format!("property=\"{property}\""))
+                || lower.contains(&format!("property='{property}'"))
+        })
+        .count();
+
+    if found >= 3 {
+        check_pass(
+            "OpenGraph",
+            &format!("homepage exposes {found}/4 core OpenGraph properties"),
+            10,
+        )
+    } else if found > 0 {
+        check_warn(
+            "OpenGraph",
+            &format!("homepage exposes only {found}/4 core OpenGraph properties"),
+            5,
+            10,
+        )
+    } else {
+        check_warn("OpenGraph", "homepage OpenGraph metadata missing", 0, 10)
+    }
+}
+
 fn has_json_ld(html: &str) -> bool {
     html.to_ascii_lowercase().contains("application/ld+json")
 }
@@ -535,6 +565,13 @@ mod tests {
         assert!(has_json_ld(html));
         assert!(has_tag(html, "main"));
         assert!(has_tag(html, "h1"));
+    }
+
+    #[test]
+    fn checks_open_graph_metadata() {
+        let html = r#"<meta property="og:title" content="Title"><meta property="og:description" content="Desc"><meta property="og:url" content="https://example.com/">"#;
+        let check = check_open_graph(html);
+        assert_eq!(check.status, AgentCheckStatus::Pass);
     }
 
     #[test]
