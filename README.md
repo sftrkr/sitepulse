@@ -313,16 +313,16 @@ Potential next improvements:
     - [x] Check sitemap directives in `robots.txt`
     - [x] Check homepage discovery `Link` headers
     - [ ] Check DNS for AI Discovery (DNS-AID) records
-  - [ ] Content accessibility
+  - [x] Content accessibility
     - [x] Check `llms.txt` availability
     - [x] Check `llms-full.txt` availability
     - [x] Check Markdown content negotiation
-  - [ ] Bot access control
+  - [x] Bot access control
     - [x] Detect AI bot rules in `robots.txt`
     - [x] Detect whether known AI agents are blocked or allowed
     - [x] Check Content Signals headers/metadata
-    - [ ] Check Web Bot Auth signals
-  - [ ] Protocol discovery
+    - [x] Check Web Bot Auth signals
+  - [x] Protocol discovery
     - [x] Check MCP Server Card
     - [x] Check Agent Skills
     - [x] Check WebMCP

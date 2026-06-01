@@ -147,6 +147,7 @@ pub async fn audit_agent_readiness(
         &homepage_headers,
         homepage_body(&homepage),
     ));
+    checks.push(check_web_bot_auth(&homepage_headers));
     checks.push(check_markdown_negotiation(&markdown));
     checks.extend(check_protocol_discovery(&protocol_discovery));
     checks.extend(check_commerce_discovery(&commerce_discovery));
@@ -256,6 +257,8 @@ struct HeaderFetchResult {
     links: Vec<String>,
     content_signals: Vec<String>,
     x_robots_tag: Vec<String>,
+    web_bot_auth: Vec<String>,
+    www_authenticate: Vec<String>,
     error: Option<String>,
 }
 
@@ -275,11 +278,15 @@ async fn fetch_homepage_headers(client: &Client, url: &str) -> HeaderFetchResult
             let links = header_values(headers, LINK);
             let content_signals = header_values_by_name(headers, "content-signals");
             let x_robots_tag = header_values_by_name(headers, "x-robots-tag");
+            let web_bot_auth = header_values_by_name(headers, "web-bot-auth");
+            let www_authenticate = header_values_by_name(headers, "www-authenticate");
             HeaderFetchResult {
                 status: Some(status),
                 links,
                 content_signals,
                 x_robots_tag,
+                web_bot_auth,
+                www_authenticate,
                 error: None,
             }
         }
@@ -288,6 +295,8 @@ async fn fetch_homepage_headers(client: &Client, url: &str) -> HeaderFetchResult
             links: Vec::new(),
             content_signals: Vec::new(),
             x_robots_tag: Vec::new(),
+            web_bot_auth: Vec::new(),
+            www_authenticate: Vec::new(),
             error: Some(error.to_string()),
         },
     }
@@ -395,6 +404,50 @@ fn has_content_signal_metadata(html: &str) -> bool {
         || lower.contains("tdm-reservation")
         || lower.contains("noai")
         || lower.contains("noimageai")
+}
+
+fn check_web_bot_auth(result: &HeaderFetchResult) -> AgentReadinessCheck {
+    let link_signal = result
+        .links
+        .iter()
+        .any(|value| value.to_ascii_lowercase().contains("web-bot-auth"));
+    let www_auth_signal = result.www_authenticate.iter().any(|value| {
+        let lower = value.to_ascii_lowercase();
+        lower.contains("bot") || lower.contains("http-message-signatures")
+    });
+    let explicit_header_signal = !result.web_bot_auth.is_empty();
+
+    if explicit_header_signal || www_auth_signal || link_signal {
+        let mut sources = Vec::new();
+        if explicit_header_signal {
+            sources.push("Web-Bot-Auth header");
+        }
+        if www_auth_signal {
+            sources.push("WWW-Authenticate header");
+        }
+        if link_signal {
+            sources.push("Link header");
+        }
+        check_pass(
+            "Web Bot Auth",
+            &format!("Web Bot Auth signal found via {}", sources.join(", ")),
+            10,
+        )
+    } else if let Some(error) = &result.error {
+        check_warn(
+            "Web Bot Auth",
+            &format!("Web Bot Auth signals could not be checked: {error}"),
+            0,
+            10,
+        )
+    } else {
+        check_warn(
+            "Web Bot Auth",
+            "no Web Bot Auth signal found in homepage headers",
+            0,
+            10,
+        )
+    }
 }
 
 fn check_link_headers(result: &HeaderFetchResult) -> AgentReadinessCheck {
@@ -1017,6 +1070,21 @@ mod tests {
     fn checks_open_graph_metadata() {
         let html = r#"<meta property="og:title" content="Title"><meta property="og:description" content="Desc"><meta property="og:url" content="https://example.com/">"#;
         let check = check_open_graph(html);
+        assert_eq!(check.status, AgentCheckStatus::Pass);
+    }
+
+    #[test]
+    fn detects_web_bot_auth_header() {
+        let result = HeaderFetchResult {
+            status: Some(200),
+            links: Vec::new(),
+            content_signals: Vec::new(),
+            x_robots_tag: Vec::new(),
+            web_bot_auth: vec!["required".to_string()],
+            www_authenticate: Vec::new(),
+            error: None,
+        };
+        let check = check_web_bot_auth(&result);
         assert_eq!(check.status, AgentCheckStatus::Pass);
     }
 
