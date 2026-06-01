@@ -158,6 +158,19 @@ cargo run -- check https://example.com/sitemap.xml --respect-robots
 
 ```bash
 cargo run -- check https://example.com/sitemap.xml --agent-ready
+```
+
+```bash
+cargo run -- check https://example.com/sitemap.xml --sitemap-retries 3
+```
+
+```bash
+cargo run -- check https://example.com/sitemap.xml \
+  --agent-ready \
+  --agent-ready-export-json agent-ready.json \
+  --agent-ready-export-html agent-ready.html \
+  --agent-ready-fail-under 80
+```
 
 Multiple options can be used together:
 
@@ -168,15 +181,18 @@ cargo run -- check https://example.com/sitemap.xml \
   --method head \
   --analyze-meta \
   --retries 2 \
+  --sitemap-retries 3 \
   --max-urls 1000 \
   --same-host-only \
   --respect-robots \
   --only-errors \
   --export report.csv \
   --export-json report.json \
-  --export-html report.html
+  --export-html report.html \
+  --agent-ready \
+  --agent-ready-export-json agent-ready.json \
+  --agent-ready-export-html agent-ready.html
 ```
-
 ## Example terminal output
 
 ```text
