@@ -370,13 +370,12 @@ Completed:
 - [x] Add GitHub release workflow for tagged binary releases
 - [x] Add configuration file support for repeated audits
 - [x] Add basic per-request politeness delay
+- [x] Add JUnit and SARIF CI exports
 
 Potential next improvements:
 
 - [ ] Publish GitHub release notes and binaries for `v0.1.0`
 - [ ] Add Homebrew formula or prebuilt release binaries
-- [x] Add JUnit-style CI export
-- [x] Add SARIF CI export
 - [ ] Add advanced per-host rate limiting controls
 - [ ] Add richer structured data validation for JSON-LD schema types
 

@@ -14,7 +14,7 @@ use agent::{
     print_agent_readiness_report, score_percent,
 };
 use anyhow::Result;
-use checker::check_urls;
+use checker::{check_urls, CheckOptions};
 use clap::Parser;
 use cli::{Cli, Commands, HttpMethodArg};
 use config::{apply_check_config, load_check_config};
@@ -105,13 +105,15 @@ async fn main() -> Result<()> {
 
             let results = check_urls(
                 &urls,
-                args.concurrency,
-                args.timeout,
-                args.retries,
-                method,
-                args.analyze_meta,
-                &args.user_agent,
-                args.delay_ms,
+                CheckOptions {
+                    concurrency: args.concurrency,
+                    timeout_secs: args.timeout,
+                    retries: args.retries,
+                    method,
+                    analyze_meta: args.analyze_meta,
+                    user_agent: &args.user_agent,
+                    delay_ms: args.delay_ms,
+                },
             )
             .await;
             print_results(&results, args.only_errors);
@@ -135,20 +137,12 @@ async fn main() -> Result<()> {
 
             if let Some(path) = args.export_junit.as_deref() {
                 export_junit(path, &results)?;
-                println!(
-                    "
-JUnit XML report written to: {}",
-                    path.display()
-                );
+                println!("\nJUnit XML report written to: {}", path.display());
             }
 
             if let Some(path) = args.export_sarif.as_deref() {
                 export_sarif(path, &results)?;
-                println!(
-                    "
-SARIF report written to: {}",
-                    path.display()
-                );
+                println!("\nSARIF report written to: {}", path.display());
             }
 
             print_summary(&summary);

@@ -9,19 +9,21 @@ use tokio::time::sleep;
 const MAX_REDIRECTS: usize = 10;
 const RETRY_BACKOFF_MS: u64 = 250;
 
-pub async fn check_urls(
-    urls: &[String],
-    concurrency: usize,
-    timeout_secs: u64,
-    retries: usize,
-    method: RequestMethod,
-    analyze_meta: bool,
-    user_agent: &str,
-    delay_ms: u64,
-) -> Vec<UrlCheckResult> {
+#[derive(Debug, Clone)]
+pub struct CheckOptions<'a> {
+    pub concurrency: usize,
+    pub timeout_secs: u64,
+    pub retries: usize,
+    pub method: RequestMethod,
+    pub analyze_meta: bool,
+    pub user_agent: &'a str,
+    pub delay_ms: u64,
+}
+
+pub async fn check_urls(urls: &[String], options: CheckOptions<'_>) -> Vec<UrlCheckResult> {
     let client = Client::builder()
-        .user_agent(user_agent)
-        .timeout(Duration::from_secs(timeout_secs))
+        .user_agent(options.user_agent)
+        .timeout(Duration::from_secs(options.timeout_secs))
         .redirect(Policy::limited(MAX_REDIRECTS))
         .build()
         .expect("failed to build HTTP client");
@@ -29,12 +31,15 @@ pub async fn check_urls(
     stream::iter(urls.iter().cloned())
         .map(|url| {
             let client = client.clone();
-            let method = method.clone();
+            let method = options.method.clone();
+            let retries = options.retries;
+            let analyze_meta = options.analyze_meta;
+            let delay_ms = options.delay_ms;
             async move {
                 check_url_with_retries(&client, url, retries, method, analyze_meta, delay_ms).await
             }
         })
-        .buffer_unordered(concurrency)
+        .buffer_unordered(options.concurrency)
         .collect()
         .await
 }
