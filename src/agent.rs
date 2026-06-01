@@ -966,9 +966,7 @@ fn robot_access_for_agent(body: &str, agent: &str) -> RobotAccess {
 
     if disallow_root {
         RobotAccess::Blocked
-    } else if matched && explicit_allow_root {
-        RobotAccess::Allowed
-    } else if matched {
+    } else if matched || explicit_allow_root {
         RobotAccess::Allowed
     } else {
         RobotAccess::Unspecified

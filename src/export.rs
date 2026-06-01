@@ -77,9 +77,9 @@ fn write_summary(html: &mut String, summary: &Summary) {
         ("Average", format!("{}ms", summary.average_time_ms)),
     ];
     for (label, value) in cards {
-        let _ = write!(
+        let _ = writeln!(
             html,
-            "    <div class=\"card\"><div class=\"muted\">{}</div><div class=\"value\">{}</div></div>\n",
+            "    <div class=\"card\"><div class=\"muted\">{}</div><div class=\"value\">{}</div></div>",
             escape_html(label),
             escape_html(&value)
         );
@@ -104,9 +104,9 @@ fn write_results_table(html: &mut String, results: &[UrlCheckResult]) {
             .status
             .map(|status| status.to_string())
             .unwrap_or_else(|| "ERR".to_string());
-        let _ = write!(
+        let _ = writeln!(
             html,
-            "      <tr class=\"{}\"><td>{}</td><td>{}ms</td><td>{}</td><td>{}</td><td>{}</td><td><code>{}</code></td><td><code>{}</code></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>\n",
+            "      <tr class=\"{}\"><td>{}</td><td>{}ms</td><td>{}</td><td>{}</td><td>{}</td><td><code>{}</code></td><td><code>{}</code></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
             class,
             escape_html(&status),
             result.time_ms,
@@ -132,9 +132,9 @@ fn write_slowest(html: &mut String, summary: &Summary) {
 
     html.push_str("  <h2>Slowest URLs</h2>\n  <ol>\n");
     for result in &summary.slowest {
-        let _ = write!(
+        let _ = writeln!(
             html,
-            "    <li>{}ms <code>{}</code></li>\n",
+            "    <li>{}ms <code>{}</code></li>",
             result.time_ms,
             escape_html(&result.url)
         );

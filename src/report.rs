@@ -14,8 +14,8 @@ pub fn print_results(results: &[UrlCheckResult], only_errors: bool) {
     }
 
     println!(
-        "{:<8} {:>7} {:>8} {:>7} {:>9} {:>8} {}",
-        "STATUS", "TIME", "ATTEMPTS", "METHOD", "REDIRECT", "ERROR", "URL"
+        "{:<8} {:>7} {:>8} {:>7} {:>9} {:>8} URL",
+        "STATUS", "TIME", "ATTEMPTS", "METHOD", "REDIRECT", "ERROR"
     );
     println!("{}", "-".repeat(90));
 
@@ -76,7 +76,7 @@ pub fn summarize(results: &[UrlCheckResult]) -> Summary {
         total_time / results.len() as u128
     };
     let mut slowest = results.to_vec();
-    slowest.sort_by(|a, b| b.time_ms.cmp(&a.time_ms));
+    slowest.sort_by_key(|result| std::cmp::Reverse(result.time_ms));
     slowest.truncate(10);
     summary.slowest = slowest;
 
