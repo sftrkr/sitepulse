@@ -135,6 +135,15 @@ Agent readiness HTML report written to: {}",
                         path.display()
                     );
                 }
+
+                if let Some(threshold) = args.agent_ready_fail_under {
+                    if threshold > 100 {
+                        anyhow::bail!("--agent-ready-fail-under must be between 0 and 100");
+                    }
+                    if score_percent(&agent_report) < threshold {
+                        std::process::exit(3);
+                    }
+                }
             }
 
             if args.fail_on_errors && summary.has_errors() {
