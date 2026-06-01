@@ -27,6 +27,7 @@ Current features:
 - Retry support for network errors and `5xx` responses
 - GET/HEAD check method selection
 - Same-host filtering option
+- Optional robots.txt filtering
 - Maximum URL limit option
 - CSV export
 - JSON export
@@ -100,6 +101,7 @@ Options:
 | `--retries <N>` | Retry failed requests and `5xx` responses | `0` |
 | `--max-urls <N>` | Limit how many discovered URLs are checked | None |
 | `--same-host-only` | Only check URLs whose host matches the sitemap URL host | Disabled |
+| `--respect-robots` | Filter out URLs disallowed by robots.txt | Disabled |
 
 Examples:
 
@@ -135,6 +137,10 @@ cargo run -- check https://example.com/sitemap.xml --max-urls 100
 cargo run -- check https://example.com/sitemap.xml --same-host-only
 ```
 
+```bash
+cargo run -- check https://example.com/sitemap.xml --respect-robots
+```
+
 Multiple options can be used together:
 
 ```bash
@@ -145,6 +151,7 @@ cargo run -- check https://example.com/sitemap.xml \
   --retries 2 \
   --max-urls 1000 \
   --same-host-only \
+  --respect-robots \
   --only-errors \
   --export report.csv \
   --export-json report.json \
@@ -266,6 +273,7 @@ Completed:
 - [x] Retry support
 - [x] GET/HEAD check method selection
 - [x] Same-host filtering option
+- [x] Optional robots.txt filtering
 - [x] Maximum URL limit option
 - [x] CSV export
 - [x] JSON export
@@ -279,7 +287,6 @@ Completed:
 
 Potential next improvements:
 
-- [ ] Robots.txt checks
 - [ ] Canonical URL checks
 - [ ] Title/meta description checks
 

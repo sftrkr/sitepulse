@@ -63,6 +63,10 @@ pub struct CheckArgs {
     #[arg(long)]
     pub same_host_only: bool,
 
+    /// Filter out URLs disallowed by robots.txt
+    #[arg(long)]
+    pub respect_robots: bool,
+
     /// Exit with a non-zero status code if any error is found
     #[arg(long)]
     pub fail_on_errors: bool,

@@ -3,6 +3,7 @@ mod cli;
 mod export;
 mod models;
 mod report;
+mod robots;
 mod sitemap;
 
 use anyhow::Result;
@@ -12,6 +13,7 @@ use cli::{Cli, Commands, HttpMethodArg};
 use export::{export_csv, export_html, export_json};
 use models::RequestMethod;
 use report::{print_results, print_summary, summarize};
+use robots::{fetch_robots_rules, filter_allowed_by_robots};
 use sitemap::discover_urls;
 use url::Url;
 
@@ -47,13 +49,22 @@ async fn main() -> Result<()> {
                 urls = filter_same_host(urls, &args.sitemap_url)?;
             }
 
+            let same_host_count = urls.len();
+            if args.respect_robots {
+                let rules = fetch_robots_rules(&args.sitemap_url, args.timeout).await?;
+                urls = filter_allowed_by_robots(urls, &rules);
+            }
+
             let filtered_count = urls.len();
             if let Some(max_urls) = args.max_urls {
                 urls.truncate(max_urls);
             }
             println!("Discovered URLs: {}", discovered_count);
             if args.same_host_only {
-                println!("After same-host filter: {}", filtered_count);
+                println!("After same-host filter: {}", same_host_count);
+            }
+            if args.respect_robots {
+                println!("After robots.txt filter: {}", filtered_count);
             }
             if urls.len() != filtered_count {
                 println!("Checking URLs: {}", urls.len());
