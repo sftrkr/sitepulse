@@ -37,6 +37,15 @@ pub fn print_results(results: &[UrlCheckResult], only_errors: bool) {
             status, result.time_ms, result.attempts, result.method, redirect, has_error, url
         );
 
+        if let Some(title) = &result.title {
+            println!("{:<8} Title: {}", "", title);
+        }
+        if let Some(description) = &result.meta_description {
+            println!("{:<8} Meta description: {}", "", description);
+        }
+        if let Some(canonical_url) = &result.canonical_url {
+            println!("{:<8} Canonical: {}", "", canonical_url);
+        }
         if let Some(error) = &result.error {
             println!("{:<8} {}", "", error);
         }

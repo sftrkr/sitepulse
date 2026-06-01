@@ -73,6 +73,33 @@ fn head_method_checks_urls() {
     assert!(stdout.contains("HEAD"), "{stdout}");
 }
 
+#[test]
+fn analyze_meta_prints_title_description_and_canonical() {
+    let server = TestServer::start();
+
+    let output = Command::new(env!("CARGO_BIN_EXE_sitepulse"))
+        .args([
+            "check",
+            &server.url("/meta-sitemap.xml"),
+            "--analyze-meta",
+            "--max-urls",
+            "1",
+        ])
+        .output()
+        .expect("failed to run sitepulse binary");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Analyze meta: yes"), "{stdout}");
+    assert!(stdout.contains("Title: OK page"), "{stdout}");
+    assert!(
+        stdout.contains("Meta description: Local test description"),
+        "{stdout}"
+    );
+    assert!(stdout.contains("Canonical: "), "{stdout}");
+    assert!(stdout.contains("/ok-canonical"), "{stdout}");
+}
+
 struct TestServer {
     base_url: String,
     addr: SocketAddr,
@@ -98,14 +125,25 @@ impl TestServer {
                     "/sitemap.xml" => xml_response(format!(
                         r#"<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>{}/missing</loc></url>
   <url><loc>{}/ok</loc></url>
+  <url><loc>{}/missing</loc></url>
   <url><loc>{}/redirect</loc></url>
   <url><loc>{}/server-error</loc></url>
 </urlset>"#,
                         thread_base_url, thread_base_url, thread_base_url, thread_base_url
                     )),
-                    "/ok" | "/final" => Response::from_string("ok"),
+                    "/meta-sitemap.xml" => xml_response(format!(
+                        r#"<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>{}/ok</loc></url>
+</urlset>"#,
+                        thread_base_url
+                    )),
+                    "/ok" => Response::from_string(format!(
+                        r#"<!doctype html><html><head><title>OK page</title><meta name="description" content="Local test description" /><link rel="canonical" href="{}/ok-canonical" /></head><body>ok</body></html>"#,
+                        thread_base_url
+                    )),
+                    "/final" => Response::from_string("ok"),
                     "/missing" => {
                         Response::from_string("missing").with_status_code(StatusCode(404))
                     }
