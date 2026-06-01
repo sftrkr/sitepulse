@@ -26,6 +26,7 @@ Current features:
 - Timeout support
 - Custom User-Agent support
 - Concurrency support
+- Per-request delay support for politeness/rate limiting
 - Option to show only errors
 - Retry support for network errors and `5xx` responses
 - GET/HEAD check method selection
@@ -98,6 +99,7 @@ Options:
 | --- | --- | --- |
 | `--config <FILE>` | Load check options from a JSON config file | None |
 | `--concurrency <N>` | Number of concurrent HTTP checks | `10` |
+| `--delay-ms <MS>` | Delay before each URL check request in milliseconds | `0` |
 | `--timeout <SECONDS>` | Request timeout in seconds | `10` |
 | `--user-agent <VALUE>` | Custom User-Agent for all HTTP requests | `sitepulse/0.1 (+https://example.local)` |
 | `--method <METHOD>` | HTTP method for URL checks: `get` or `head` | `get` |
@@ -331,6 +333,7 @@ Completed:
 - [x] URL parsing
 - [x] HTTP checks
 - [x] Concurrency
+- [x] Per-request delay support for politeness/rate limiting
 - [x] Timeout
 - [x] Custom User-Agent support
 - [x] `--only-errors`
@@ -369,7 +372,8 @@ Potential next improvements:
 - [ ] Add packaged install instructions (`cargo install`, Homebrew, or prebuilt binaries)
 - [x] Add configuration file support for repeated audits
 - [ ] Add SARIF/JUnit-style CI export
-- [ ] Add rate limiting and per-host politeness controls
+- [x] Add basic per-request politeness delay
+- [ ] Add advanced per-host rate limiting controls
 - [ ] Add richer structured data validation for JSON-LD schema types
 
 ## Notes

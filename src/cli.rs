@@ -31,6 +31,10 @@ pub struct CheckArgs {
     #[arg(long, default_value_t = 10)]
     pub concurrency: usize,
 
+    /// Delay before each URL check request in milliseconds
+    #[arg(long, default_value_t = 0)]
+    pub delay_ms: u64,
+
     /// Request timeout in seconds
     #[arg(long, default_value_t = 10)]
     pub timeout: u64,

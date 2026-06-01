@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 #[derive(Debug, Default, Deserialize)]
 pub struct CheckConfig {
     pub concurrency: Option<usize>,
+    pub delay_ms: Option<u64>,
     pub timeout: Option<u64>,
     pub user_agent: Option<String>,
     pub method: Option<HttpMethodConfig>,

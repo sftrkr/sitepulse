@@ -50,6 +50,7 @@ async fn main() -> Result<()> {
 
             println!("Checking sitemap: {}", args.sitemap_url);
             println!("Concurrency: {}", args.concurrency);
+            println!("Delay: {}ms", args.delay_ms);
             let method = match args.method {
                 HttpMethodArg::Get => RequestMethod::Get,
                 HttpMethodArg::Head => RequestMethod::Head,
@@ -110,6 +111,7 @@ async fn main() -> Result<()> {
                 method,
                 args.analyze_meta,
                 &args.user_agent,
+                args.delay_ms,
             )
             .await;
             print_results(&results, args.only_errors);
