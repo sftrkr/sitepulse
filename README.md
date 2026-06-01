@@ -300,16 +300,42 @@ Completed:
 Potential next improvements:
 
 - [ ] Agent readiness audit (`--agent-ready`)
-  - [ ] Check `robots.txt` accessibility
-  - [ ] Detect whether generic crawlers or known AI agents are blocked
-  - [ ] Check `llms.txt` and `llms-full.txt` availability
-  - [ ] Check whether sitemap URLs are declared in `robots.txt`
-  - [ ] Analyze homepage title, meta description, canonical URL, and OpenGraph metadata
-  - [ ] Detect JSON-LD structured data
-  - [ ] Report semantic HTML signals such as `<main>` and `<h1>`
-  - [ ] Provide an agent readiness score and PASS/WARN/FAIL checklist
-  - [ ] Add JSON/HTML export support for agent readiness results
-
+  - [ ] Discoverability
+    - [ ] Check `robots.txt` accessibility
+    - [ ] Check sitemap directives in `robots.txt`
+    - [ ] Check homepage discovery `Link` headers
+    - [ ] Check DNS for AI Discovery (DNS-AID) records
+  - [ ] Content accessibility
+    - [ ] Check `llms.txt` availability
+    - [ ] Check `llms-full.txt` availability
+    - [ ] Check Markdown content negotiation
+  - [ ] Bot access control
+    - [ ] Detect AI bot rules in `robots.txt`
+    - [ ] Detect whether known AI agents are blocked or allowed
+    - [ ] Check Content Signals headers/metadata
+    - [ ] Check Web Bot Auth signals
+  - [ ] Protocol discovery
+    - [ ] Check MCP Server Card
+    - [ ] Check Agent Skills
+    - [ ] Check WebMCP
+    - [ ] Check A2A Agent Card
+    - [ ] Check API catalog
+    - [ ] Check OAuth discovery
+    - [ ] Check OAuth Protected Resource metadata
+    - [ ] Check `auth.md`
+  - [ ] Page intelligence signals
+    - [ ] Analyze homepage title, meta description, canonical URL, and OpenGraph metadata
+    - [ ] Detect JSON-LD structured data
+    - [ ] Report semantic HTML signals such as `<main>` and `<h1>`
+  - [ ] Commerce readiness
+    - [ ] Check x402
+    - [ ] Check MPP
+    - [ ] Check UCP
+    - [ ] Check ACP
+  - [ ] Scoring/reporting
+    - [ ] Provide an agent readiness score
+    - [ ] Provide PASS/WARN/FAIL checklist
+    - [ ] Add JSON/HTML export support for agent readiness results
 
 ## Notes
 
