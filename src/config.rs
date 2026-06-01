@@ -8,6 +8,7 @@ pub struct CheckConfig {
     pub concurrency: Option<usize>,
     pub delay_ms: Option<u64>,
     pub rate_limit_per_second: Option<u64>,
+    pub per_host_concurrency: Option<usize>,
     pub timeout: Option<u64>,
     pub user_agent: Option<String>,
     pub method: Option<HttpMethodConfig>,
@@ -53,6 +54,9 @@ pub fn apply_check_config(args: &mut CheckArgs, config: CheckConfig) {
     }
     if let Some(value) = config.rate_limit_per_second {
         args.rate_limit_per_second = Some(value);
+    }
+    if let Some(value) = config.per_host_concurrency {
+        args.per_host_concurrency = Some(value);
     }
     if let Some(value) = config.timeout {
         args.timeout = value;
@@ -135,6 +139,7 @@ mod tests {
                 concurrency: Some(3),
                 delay_ms: Some(50),
                 rate_limit_per_second: Some(2),
+                per_host_concurrency: Some(1),
                 method: Some(HttpMethodConfig::Head),
                 agent_ready: Some(true),
                 ..CheckConfig::default()
@@ -143,6 +148,7 @@ mod tests {
         assert_eq!(args.concurrency, 3);
         assert_eq!(args.delay_ms, 50);
         assert_eq!(args.rate_limit_per_second, Some(2));
+        assert_eq!(args.per_host_concurrency, Some(1));
         assert!(matches!(args.method, HttpMethodArg::Head));
         assert!(args.agent_ready);
     }

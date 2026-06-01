@@ -377,7 +377,8 @@ Potential next improvements:
 
 - [ ] Publish GitHub release notes and binaries for `v0.1.0`
 - [ ] Add Homebrew formula or prebuilt release binaries
-- [ ] Add advanced per-host rate limiting controls
+- [x] Add per-host concurrency controls
+- [ ] Add advanced per-host rate window controls
 
 ## Notes
 

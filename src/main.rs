@@ -50,12 +50,18 @@ async fn main() -> Result<()> {
             if matches!(args.rate_limit_per_second, Some(0)) {
                 anyhow::bail!("--rate-limit-per-second must be greater than 0");
             }
+            if matches!(args.per_host_concurrency, Some(0)) {
+                anyhow::bail!("--per-host-concurrency must be greater than 0");
+            }
 
             println!("Checking sitemap: {}", args.sitemap_url);
             println!("Concurrency: {}", args.concurrency);
             println!("Delay: {}ms", args.delay_ms);
             if let Some(rate_limit) = args.rate_limit_per_second {
                 println!("Rate limit: {rate_limit} req/s");
+            }
+            if let Some(per_host_concurrency) = args.per_host_concurrency {
+                println!("Per-host concurrency: {per_host_concurrency}");
             }
             let method = match args.method {
                 HttpMethodArg::Get => RequestMethod::Get,
@@ -120,6 +126,7 @@ async fn main() -> Result<()> {
                     user_agent: &args.user_agent,
                     delay_ms: args.delay_ms,
                     rate_limit_per_second: args.rate_limit_per_second,
+                    per_host_concurrency: args.per_host_concurrency,
                 },
             )
             .await;

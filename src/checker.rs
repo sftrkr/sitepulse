@@ -3,10 +3,12 @@ use crate::models::{RequestMethod, UrlCheckResult};
 use futures::stream::{self, StreamExt};
 use reqwest::redirect::Policy;
 use reqwest::Client;
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, Semaphore};
 use tokio::time::sleep;
+use url::Url;
 
 const MAX_REDIRECTS: usize = 10;
 const RETRY_BACKOFF_MS: u64 = 250;
@@ -21,6 +23,7 @@ pub struct CheckOptions<'a> {
     pub user_agent: &'a str,
     pub delay_ms: u64,
     pub rate_limit_per_second: Option<u64>,
+    pub per_host_concurrency: Option<usize>,
 }
 
 pub async fn check_urls(urls: &[String], options: CheckOptions<'_>) -> Vec<UrlCheckResult> {
@@ -35,6 +38,7 @@ pub async fn check_urls(urls: &[String], options: CheckOptions<'_>) -> Vec<UrlCh
         .filter(|rate| *rate > 0)
         .map(RateLimiter::new)
         .map(Arc::new);
+    let host_limiters = build_host_limiters(urls, options.per_host_concurrency);
 
     stream::iter(urls.iter().cloned())
         .map(|url| {
@@ -44,6 +48,7 @@ pub async fn check_urls(urls: &[String], options: CheckOptions<'_>) -> Vec<UrlCh
             let analyze_meta = options.analyze_meta;
             let delay_ms = options.delay_ms;
             let rate_limiter = rate_limiter.clone();
+            let host_limiter = host_limiter_for_url(&host_limiters, &url);
             async move {
                 check_url_with_retries(
                     &client,
@@ -53,6 +58,7 @@ pub async fn check_urls(urls: &[String], options: CheckOptions<'_>) -> Vec<UrlCh
                     analyze_meta,
                     delay_ms,
                     rate_limiter,
+                    host_limiter,
                 )
                 .await
             }
@@ -70,6 +76,7 @@ async fn check_url_with_retries(
     analyze_meta: bool,
     delay_ms: u64,
     rate_limiter: Option<Arc<RateLimiter>>,
+    host_limiter: Option<Arc<Semaphore>>,
 ) -> UrlCheckResult {
     let max_attempts = retries + 1;
     let mut attempt = 1;
@@ -81,6 +88,10 @@ async fn check_url_with_retries(
         if delay_ms > 0 {
             sleep(Duration::from_millis(delay_ms)).await;
         }
+        let _host_permit = match &host_limiter {
+            Some(limiter) => limiter.acquire().await.ok(),
+            None => None,
+        };
         let result = check_url_once(client, url.clone(), attempt, &method, analyze_meta).await;
         if attempt >= max_attempts || !should_retry(&result) {
             return result;
@@ -90,6 +101,36 @@ async fn check_url_with_retries(
         sleep(Duration::from_millis(backoff)).await;
         attempt += 1;
     }
+}
+
+fn build_host_limiters(
+    urls: &[String],
+    per_host_concurrency: Option<usize>,
+) -> Option<Arc<HashMap<String, Arc<Semaphore>>>> {
+    let limit = per_host_concurrency.filter(|limit| *limit > 0)?;
+    let mut limiters = HashMap::new();
+    for url in urls {
+        if let Some(host) = host_key(url) {
+            limiters
+                .entry(host)
+                .or_insert_with(|| Arc::new(Semaphore::new(limit)));
+        }
+    }
+    Some(Arc::new(limiters))
+}
+
+fn host_limiter_for_url(
+    limiters: &Option<Arc<HashMap<String, Arc<Semaphore>>>>,
+    url: &str,
+) -> Option<Arc<Semaphore>> {
+    let host = host_key(url)?;
+    limiters.as_ref()?.get(&host).cloned()
+}
+
+fn host_key(url: &str) -> Option<String> {
+    Url::parse(url)
+        .ok()
+        .and_then(|parsed| parsed.host_str().map(|host| host.to_ascii_lowercase()))
 }
 
 struct RateLimiter {
@@ -235,6 +276,18 @@ mod tests {
             meta_description: None,
             canonical_url: None,
         }
+    }
+
+    #[test]
+    fn builds_host_limiters() {
+        let urls = vec![
+            "https://example.com/a".to_string(),
+            "https://EXAMPLE.com/b".to_string(),
+            "https://example.org/a".to_string(),
+        ];
+        let limiters = build_host_limiters(&urls, Some(2)).unwrap();
+        assert_eq!(limiters.len(), 2);
+        assert!(limiters.contains_key("example.com"));
     }
 
     #[test]

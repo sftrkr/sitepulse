@@ -39,6 +39,10 @@ pub struct CheckArgs {
     #[arg(long)]
     pub rate_limit_per_second: Option<u64>,
 
+    /// Maximum concurrent URL checks per host
+    #[arg(long)]
+    pub per_host_concurrency: Option<usize>,
+
     /// Request timeout in seconds
     #[arg(long, default_value_t = 10)]
     pub timeout: u64,
