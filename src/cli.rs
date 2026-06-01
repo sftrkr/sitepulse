@@ -31,6 +31,10 @@ pub struct CheckArgs {
     #[arg(long, default_value_t = 10)]
     pub timeout: u64,
 
+    /// Custom User-Agent for all HTTP requests
+    #[arg(long, default_value = "sitepulse/0.1 (+https://example.local)")]
+    pub user_agent: String,
+
     /// HTTP method to use for URL checks
     #[arg(long, value_enum, default_value_t = HttpMethodArg::Get)]
     pub method: HttpMethodArg,

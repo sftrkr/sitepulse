@@ -49,6 +49,7 @@ async fn main() -> Result<()> {
             };
 
             println!("Timeout: {}s", args.timeout);
+            println!("User-Agent: {}", args.user_agent);
             println!("Method: {}", method);
             println!(
                 "Analyze meta: {}",
@@ -58,9 +59,13 @@ async fn main() -> Result<()> {
             println!("Sitemap retries: {}", args.sitemap_retries);
             println!();
 
-            let mut urls =
-                discover_urls_with_retries(&args.sitemap_url, args.timeout, args.sitemap_retries)
-                    .await?;
+            let mut urls = discover_urls_with_retries(
+                &args.sitemap_url,
+                args.timeout,
+                args.sitemap_retries,
+                &args.user_agent,
+            )
+            .await?;
             let discovered_count = urls.len();
 
             if args.same_host_only {
@@ -69,7 +74,8 @@ async fn main() -> Result<()> {
 
             let same_host_count = urls.len();
             if args.respect_robots {
-                let rules = fetch_robots_rules(&args.sitemap_url, args.timeout).await?;
+                let rules =
+                    fetch_robots_rules(&args.sitemap_url, args.timeout, &args.user_agent).await?;
                 urls = filter_allowed_by_robots(urls, &rules);
             }
 
@@ -96,6 +102,7 @@ async fn main() -> Result<()> {
                 args.retries,
                 method,
                 args.analyze_meta,
+                &args.user_agent,
             )
             .await;
             print_results(&results, args.only_errors);
@@ -123,7 +130,9 @@ async fn main() -> Result<()> {
                 || args.agent_ready_export_json.is_some()
                 || args.agent_ready_export_html.is_some()
             {
-                let agent_report = audit_agent_readiness(&args.sitemap_url, args.timeout).await?;
+                let agent_report =
+                    audit_agent_readiness(&args.sitemap_url, args.timeout, &args.user_agent)
+                        .await?;
                 print_agent_readiness_report(&agent_report);
 
                 if let Some(path) = args.agent_ready_export_json.as_deref() {

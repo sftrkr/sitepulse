@@ -3,8 +3,6 @@ use reqwest::Client;
 use std::time::Duration;
 use url::Url;
 
-const USER_AGENT: &str = "sitepulse/0.1 (+https://example.local)";
-
 #[derive(Debug, Default)]
 pub struct RobotsRules {
     disallow: Vec<String>,
@@ -23,10 +21,14 @@ impl RobotsRules {
     }
 }
 
-pub async fn fetch_robots_rules(sitemap_url: &str, timeout_secs: u64) -> Result<RobotsRules> {
+pub async fn fetch_robots_rules(
+    sitemap_url: &str,
+    timeout_secs: u64,
+    user_agent: &str,
+) -> Result<RobotsRules> {
     let robots_url = robots_url_for(sitemap_url)?;
     let client = Client::builder()
-        .user_agent(USER_AGENT)
+        .user_agent(user_agent)
         .timeout(Duration::from_secs(timeout_secs))
         .build()
         .context("failed to build HTTP client")?;

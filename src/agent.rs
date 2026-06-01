@@ -8,8 +8,6 @@ use serde::Serialize;
 use std::time::Duration;
 use url::Url;
 
-const USER_AGENT: &str = "sitepulse/0.1 (+https://example.local)";
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum AgentCheckStatus {
     Pass,
@@ -47,10 +45,11 @@ pub struct AgentReadinessReport {
 pub async fn audit_agent_readiness(
     sitemap_url: &str,
     timeout_secs: u64,
+    user_agent: &str,
 ) -> Result<AgentReadinessReport> {
     let site_url = site_root_url(sitemap_url)?;
     let client = Client::builder()
-        .user_agent(USER_AGENT)
+        .user_agent(user_agent)
         .timeout(Duration::from_secs(timeout_secs))
         .build()
         .context("failed to build HTTP client")?;

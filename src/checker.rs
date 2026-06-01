@@ -6,7 +6,6 @@ use reqwest::Client;
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
 
-const USER_AGENT: &str = "sitepulse/0.1 (+https://example.local)";
 const MAX_REDIRECTS: usize = 10;
 const RETRY_BACKOFF_MS: u64 = 250;
 
@@ -17,9 +16,10 @@ pub async fn check_urls(
     retries: usize,
     method: RequestMethod,
     analyze_meta: bool,
+    user_agent: &str,
 ) -> Vec<UrlCheckResult> {
     let client = Client::builder()
-        .user_agent(USER_AGENT)
+        .user_agent(user_agent)
         .timeout(Duration::from_secs(timeout_secs))
         .redirect(Policy::limited(MAX_REDIRECTS))
         .build()

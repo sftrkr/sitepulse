@@ -7,7 +7,6 @@ use std::io::Read;
 use std::time::Duration;
 use tokio::time::sleep;
 
-const USER_AGENT: &str = "sitepulse/0.1 (+https://example.local)";
 const MAX_DEPTH: usize = 2;
 const MAX_SITEMAP_BYTES: u64 = 50 * 1024 * 1024;
 const SITEMAP_RETRY_BACKOFF_MS: u64 = 500;
@@ -16,9 +15,10 @@ pub async fn discover_urls_with_retries(
     sitemap_url: &str,
     timeout_secs: u64,
     sitemap_retries: usize,
+    user_agent: &str,
 ) -> Result<Vec<String>> {
     let client = Client::builder()
-        .user_agent(USER_AGENT)
+        .user_agent(user_agent)
         .timeout(Duration::from_secs(timeout_secs))
         .build()
         .context("failed to build HTTP client")?;

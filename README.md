@@ -24,6 +24,7 @@ Current features:
 - Redirect following
 - Final URL reporting
 - Timeout support
+- Custom User-Agent support
 - Concurrency support
 - Option to show only errors
 - Retry support for network errors and `5xx` responses
@@ -97,6 +98,7 @@ Options:
 | --- | --- | --- |
 | `--concurrency <N>` | Number of concurrent HTTP checks | `10` |
 | `--timeout <SECONDS>` | Request timeout in seconds | `10` |
+| `--user-agent <VALUE>` | Custom User-Agent for all HTTP requests | `sitepulse/0.1 (+https://example.local)` |
 | `--method <METHOD>` | HTTP method for URL checks: `get` or `head` | `get` |
 | `--analyze-meta` | Extract page title, meta description, and canonical URL. Uses GET even with `--method=head` | Disabled |
 | `--only-errors` | Show only network errors and `4xx`/`5xx` responses | Disabled |
@@ -199,6 +201,7 @@ cargo run -- check https://example.com/sitemap.xml \
 Checking sitemap: https://example.com/sitemap.xml
 Concurrency: 20
 Timeout: 10s
+User-Agent: sitepulse/0.1 (+https://example.local)
 Method: HEAD
 Analyze meta: yes
 Retries: 2
@@ -309,6 +312,7 @@ Completed:
 - [x] HTTP checks
 - [x] Concurrency
 - [x] Timeout
+- [x] Custom User-Agent support
 - [x] `--only-errors`
 - [x] Retry support
 - [x] Sitemap download retry support
