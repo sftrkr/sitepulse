@@ -45,6 +45,9 @@ pub fn apply_check_config(args: &mut CheckArgs, config: CheckConfig) {
     if let Some(value) = config.concurrency {
         args.concurrency = value;
     }
+    if let Some(value) = config.delay_ms {
+        args.delay_ms = value;
+    }
     if let Some(value) = config.timeout {
         args.timeout = value;
     }
@@ -118,12 +121,14 @@ mod tests {
             args,
             CheckConfig {
                 concurrency: Some(3),
+                delay_ms: Some(50),
                 method: Some(HttpMethodConfig::Head),
                 agent_ready: Some(true),
                 ..CheckConfig::default()
             },
         );
         assert_eq!(args.concurrency, 3);
+        assert_eq!(args.delay_ms, 50);
         assert!(matches!(args.method, HttpMethodArg::Head));
         assert!(args.agent_ready);
     }
