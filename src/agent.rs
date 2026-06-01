@@ -58,6 +58,7 @@ pub async fn audit_agent_readiness(
     let homepage = fetch_optional_text(&client, site_url.as_str()).await;
     let homepage_links = fetch_link_headers(&client, site_url.as_str()).await;
     let markdown = fetch_markdown_negotiation(&client, site_url.as_str()).await;
+    let protocol_discovery = fetch_protocol_discovery(&client, &site_url).await;
     let mut checks = Vec::new();
 
     checks.push(match &robots {
@@ -134,6 +135,7 @@ pub async fn audit_agent_readiness(
     checks.push(check_text_file("llms-full.txt", &llms_full, 10));
     checks.push(check_link_headers(&homepage_links));
     checks.push(check_markdown_negotiation(&markdown));
+    checks.extend(check_protocol_discovery(&protocol_discovery));
 
     match &homepage {
         FetchResult::Ok(body) => {
@@ -384,6 +386,85 @@ fn looks_like_markdown(body: &str) -> bool {
                 "
 - ",
             ))
+}
+
+#[derive(Debug)]
+struct ProtocolEndpointResult {
+    name: &'static str,
+    path: &'static str,
+    status: Option<u16>,
+    error: Option<String>,
+}
+
+async fn fetch_protocol_discovery(client: &Client, site_url: &Url) -> Vec<ProtocolEndpointResult> {
+    let endpoints = [
+        ("MCP Server Card", "/.well-known/mcp.json"),
+        ("Agent Skills", "/.well-known/agent-skills.json"),
+        ("WebMCP", "/.well-known/webmcp.json"),
+        ("A2A Agent Card", "/.well-known/agent.json"),
+        ("API catalog", "/.well-known/api-catalog.json"),
+        ("OAuth discovery", "/.well-known/oauth-authorization-server"),
+        (
+            "OAuth Protected Resource",
+            "/.well-known/oauth-protected-resource",
+        ),
+        ("auth.md", "/auth.md"),
+    ];
+    let mut results = Vec::new();
+    for (name, path) in endpoints {
+        let url = match site_url.join(path) {
+            Ok(url) => url,
+            Err(error) => {
+                results.push(ProtocolEndpointResult {
+                    name,
+                    path,
+                    status: None,
+                    error: Some(error.to_string()),
+                });
+                continue;
+            }
+        };
+        match client.head(url.as_str()).send().await {
+            Ok(response) => results.push(ProtocolEndpointResult {
+                name,
+                path,
+                status: Some(response.status().as_u16()),
+                error: None,
+            }),
+            Err(error) => results.push(ProtocolEndpointResult {
+                name,
+                path,
+                status: None,
+                error: Some(error.to_string()),
+            }),
+        }
+    }
+    results
+}
+
+fn check_protocol_discovery(results: &[ProtocolEndpointResult]) -> Vec<AgentReadinessCheck> {
+    results
+        .iter()
+        .map(|result| match result.status {
+            Some(200..=299) => check_pass(result.name, &format!("{} is available", result.path), 5),
+            Some(status) => check_warn(
+                result.name,
+                &format!("{} returned HTTP {status}", result.path),
+                0,
+                5,
+            ),
+            None => check_warn(
+                result.name,
+                &format!(
+                    "{} could not be checked: {}",
+                    result.path,
+                    result.error.as_deref().unwrap_or("unknown error")
+                ),
+                0,
+                5,
+            ),
+        })
+        .collect()
 }
 
 fn site_root_url(input: &str) -> Result<Url> {

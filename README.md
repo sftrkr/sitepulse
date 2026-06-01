@@ -321,14 +321,14 @@ Potential next improvements:
     - [ ] Check Content Signals headers/metadata
     - [ ] Check Web Bot Auth signals
   - [ ] Protocol discovery
-    - [ ] Check MCP Server Card
-    - [ ] Check Agent Skills
-    - [ ] Check WebMCP
-    - [ ] Check A2A Agent Card
-    - [ ] Check API catalog
-    - [ ] Check OAuth discovery
-    - [ ] Check OAuth Protected Resource metadata
-    - [ ] Check `auth.md`
+    - [x] Check MCP Server Card
+    - [x] Check Agent Skills
+    - [x] Check WebMCP
+    - [x] Check A2A Agent Card
+    - [x] Check API catalog
+    - [x] Check OAuth discovery
+    - [x] Check OAuth Protected Resource metadata
+    - [x] Check `auth.md`
   - [ ] Page intelligence signals
     - [x] Analyze homepage title, meta description, canonical URL, and OpenGraph metadata
     - [x] Detect JSON-LD structured data
