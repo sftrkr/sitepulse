@@ -365,14 +365,15 @@ Completed:
   - [x] Commerce readiness checks: x402, MPP, UCP, ACP
   - [x] Scoring/reporting: score, PASS/WARN/FAIL checklist, JSON/HTML exports
 
+- [x] Add GitHub release workflow for tagged binary releases
+- [x] Add configuration file support for repeated audits
+- [x] Add basic per-request politeness delay
+
 Potential next improvements:
 
-- [x] Add GitHub release workflow for tagged binary releases
 - [ ] Publish GitHub release notes and binaries for `v0.1.0`
-- [ ] Add packaged install instructions (`cargo install`, Homebrew, or prebuilt binaries)
-- [x] Add configuration file support for repeated audits
+- [ ] Add Homebrew formula or prebuilt release binaries
 - [ ] Add SARIF/JUnit-style CI export
-- [x] Add basic per-request politeness delay
 - [ ] Add advanced per-host rate limiting controls
 - [ ] Add richer structured data validation for JSON-LD schema types
 
