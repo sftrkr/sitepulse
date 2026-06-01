@@ -25,6 +25,7 @@ Current features:
 - Concurrency support
 - Option to show only errors
 - Retry support for network errors and `5xx` responses
+- GET/HEAD check method selection
 - Maximum URL limit option
 - CSV export
 - JSON export
@@ -89,6 +90,7 @@ Options:
 | --- | --- | --- |
 | `--concurrency <N>` | Number of concurrent HTTP checks | `10` |
 | `--timeout <SECONDS>` | Request timeout in seconds | `10` |
+| `--method <METHOD>` | HTTP method for URL checks: `get` or `head` | `get` |
 | `--only-errors` | Show only network errors and `4xx`/`5xx` responses | Disabled |
 | `--export <FILE>` | Write results to a CSV file | None |
 | `--export-json <FILE>` | Write results to a JSON file | None |
@@ -105,6 +107,10 @@ cargo run -- check https://example.com/sitemap.xml --concurrency 20
 
 ```bash
 cargo run -- check https://example.com/sitemap.xml --timeout 15
+```
+
+```bash
+cargo run -- check https://example.com/sitemap.xml --method head
 ```
 
 ```bash
@@ -129,6 +135,7 @@ Multiple options can be used together:
 cargo run -- check https://example.com/sitemap.xml \
   --concurrency 20 \
   --timeout 10 \
+  --method head \
   --retries 2 \
   --max-urls 1000 \
   --only-errors \
@@ -143,16 +150,17 @@ cargo run -- check https://example.com/sitemap.xml \
 Checking sitemap: https://example.com/sitemap.xml
 Concurrency: 20
 Timeout: 10s
+Method: HEAD
 Retries: 2
 
 Discovered URLs: 1240
 
-STATUS      TIME ATTEMPTS  REDIRECT    ERROR URL
+STATUS      TIME ATTEMPTS  METHOD  REDIRECT    ERROR URL
 ------------------------------------------------------------------------------------------
-200        184ms        1        no       no https://example.com/
-301         96ms        1       yes       no https://example.com/old -> https://example.com/new
-404        121ms        1        no       no https://example.com/missing-page
-500        430ms        3        no       no https://example.com/broken
+200        184ms        1     HEAD        no       no https://example.com/
+301         96ms        1     HEAD       yes       no https://example.com/old -> https://example.com/new
+404        121ms        1     HEAD        no       no https://example.com/missing-page
+500        430ms        3     HEAD        no       no https://example.com/broken
 
 Summary:
 Total: 1240
@@ -188,7 +196,7 @@ Export to HTML:
 cargo run -- check https://example.com/sitemap.xml --export-html report.html
 ```
 
-CSV and JSON fields:
+CSV, JSON, and HTML result fields include:
 
 - `url`
 - `status`
@@ -197,6 +205,7 @@ CSV and JSON fields:
 - `final_url`
 - `error`
 - `attempts`
+- `method`
 
 ## Project structure
 
@@ -248,6 +257,7 @@ Completed:
 - [x] Timeout
 - [x] `--only-errors`
 - [x] Retry support
+- [x] GET/HEAD check method selection
 - [x] Maximum URL limit option
 - [x] CSV export
 - [x] JSON export

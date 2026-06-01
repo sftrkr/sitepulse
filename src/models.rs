@@ -1,4 +1,20 @@
 use serde::Serialize;
+use std::fmt;
+
+#[derive(Debug, Clone, Serialize)]
+pub enum RequestMethod {
+    Get,
+    Head,
+}
+
+impl fmt::Display for RequestMethod {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Get => write!(f, "GET"),
+            Self::Head => write!(f, "HEAD"),
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct UrlCheckResult {
@@ -9,6 +25,7 @@ pub struct UrlCheckResult {
     pub final_url: String,
     pub error: Option<String>,
     pub attempts: usize,
+    pub method: String,
 }
 
 impl UrlCheckResult {

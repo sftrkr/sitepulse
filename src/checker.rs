@@ -1,4 +1,4 @@
-use crate::models::UrlCheckResult;
+use crate::models::{RequestMethod, UrlCheckResult};
 use futures::stream::{self, StreamExt};
 use reqwest::redirect::Policy;
 use reqwest::Client;
@@ -14,6 +14,7 @@ pub async fn check_urls(
     concurrency: usize,
     timeout_secs: u64,
     retries: usize,
+    method: RequestMethod,
 ) -> Vec<UrlCheckResult> {
     let client = Client::builder()
         .user_agent(USER_AGENT)
@@ -25,19 +26,25 @@ pub async fn check_urls(
     stream::iter(urls.iter().cloned())
         .map(|url| {
             let client = client.clone();
-            async move { check_url_with_retries(&client, url, retries).await }
+            let method = method.clone();
+            async move { check_url_with_retries(&client, url, retries, method).await }
         })
         .buffer_unordered(concurrency)
         .collect()
         .await
 }
 
-async fn check_url_with_retries(client: &Client, url: String, retries: usize) -> UrlCheckResult {
+async fn check_url_with_retries(
+    client: &Client,
+    url: String,
+    retries: usize,
+    method: RequestMethod,
+) -> UrlCheckResult {
     let max_attempts = retries + 1;
     let mut attempt = 1;
 
     loop {
-        let result = check_url_once(client, url.clone(), attempt).await;
+        let result = check_url_once(client, url.clone(), attempt, &method).await;
         if attempt >= max_attempts || !should_retry(&result) {
             return result;
         }
@@ -52,10 +59,47 @@ fn should_retry(result: &UrlCheckResult) -> bool {
     result.error.is_some() || result.status.map(|status| status >= 500).unwrap_or(true)
 }
 
-async fn check_url_once(client: &Client, url: String, attempts: usize) -> UrlCheckResult {
+async fn check_url_once(
+    client: &Client,
+    url: String,
+    attempts: usize,
+    method: &RequestMethod,
+) -> UrlCheckResult {
     let started = Instant::now();
-    match client.get(&url).send().await {
+    let request = match method {
+        RequestMethod::Get => client.get(&url),
+        RequestMethod::Head => client.head(&url),
+    };
+
+    match request.send().await {
         Ok(response) => {
+            let method_used =
+                if matches!(method, RequestMethod::Head) && response.status().as_u16() == 405 {
+                    RequestMethod::Get
+                } else {
+                    method.clone()
+                };
+            let response =
+                if matches!(method, RequestMethod::Head) && response.status().as_u16() == 405 {
+                    match client.get(&url).send().await {
+                        Ok(response) => response,
+                        Err(err) => {
+                            return UrlCheckResult {
+                                url: url.clone(),
+                                status: None,
+                                time_ms: started.elapsed().as_millis(),
+                                redirected: false,
+                                final_url: url,
+                                error: Some(err.to_string()),
+                                attempts,
+                                method: RequestMethod::Get.to_string(),
+                            };
+                        }
+                    }
+                } else {
+                    response
+                };
+
             let elapsed = started.elapsed().as_millis();
             let status = response.status().as_u16();
             let final_url = response.url().to_string();
@@ -68,6 +112,7 @@ async fn check_url_once(client: &Client, url: String, attempts: usize) -> UrlChe
                 final_url,
                 error: None,
                 attempts,
+                method: method_used.to_string(),
             }
         }
         Err(err) => UrlCheckResult {
@@ -78,6 +123,7 @@ async fn check_url_once(client: &Client, url: String, attempts: usize) -> UrlChe
             final_url: url,
             error: Some(err.to_string()),
             attempts,
+            method: method.to_string(),
         },
     }
 }
@@ -95,6 +141,7 @@ mod tests {
             final_url: "https://example.com".to_string(),
             error: error.map(str::to_string),
             attempts: 1,
+            method: "GET".to_string(),
         }
     }
 

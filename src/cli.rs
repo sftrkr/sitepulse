@@ -1,4 +1,4 @@
-use clap::{Args, Parser, Subcommand};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
@@ -31,6 +31,10 @@ pub struct CheckArgs {
     #[arg(long, default_value_t = 10)]
     pub timeout: u64,
 
+    /// HTTP method to use for URL checks
+    #[arg(long, value_enum, default_value_t = HttpMethodArg::Get)]
+    pub method: HttpMethodArg,
+
     /// Print only HTTP/network errors and 4xx/5xx responses
     #[arg(long)]
     pub only_errors: bool,
@@ -58,4 +62,12 @@ pub struct CheckArgs {
     /// Exit with a non-zero status code if any error is found
     #[arg(long)]
     pub fail_on_errors: bool,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum HttpMethodArg {
+    /// Use GET requests for URL checks
+    Get,
+    /// Use HEAD requests for URL checks; falls back to GET on 405 Method Not Allowed
+    Head,
 }

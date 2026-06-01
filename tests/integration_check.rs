@@ -51,6 +51,28 @@ fn fail_on_errors_exits_with_code_two() {
     assert_eq!(output.status.code(), Some(2));
 }
 
+#[test]
+fn head_method_checks_urls() {
+    let server = TestServer::start();
+
+    let output = Command::new(env!("CARGO_BIN_EXE_sitepulse"))
+        .args([
+            "check",
+            &server.url("/sitemap.xml"),
+            "--method",
+            "head",
+            "--max-urls",
+            "2",
+        ])
+        .output()
+        .expect("failed to run sitepulse binary");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Method: HEAD"), "{stdout}");
+    assert!(stdout.contains("HEAD"), "{stdout}");
+}
+
 struct TestServer {
     base_url: String,
     addr: SocketAddr,

@@ -14,8 +14,8 @@ pub fn print_results(results: &[UrlCheckResult], only_errors: bool) {
     }
 
     println!(
-        "{:<8} {:>7} {:>8} {:>9} {:>8} {}",
-        "STATUS", "TIME", "ATTEMPTS", "REDIRECT", "ERROR", "URL"
+        "{:<8} {:>7} {:>8} {:>7} {:>9} {:>8} {}",
+        "STATUS", "TIME", "ATTEMPTS", "METHOD", "REDIRECT", "ERROR", "URL"
     );
     println!("{}", "-".repeat(90));
 
@@ -33,8 +33,8 @@ pub fn print_results(results: &[UrlCheckResult], only_errors: bool) {
         };
 
         println!(
-            "{:<8} {:>6}ms {:>8} {:>9} {:>8} {}",
-            status, result.time_ms, result.attempts, redirect, has_error, url
+            "{:<8} {:>6}ms {:>8} {:>7} {:>9} {:>8} {}",
+            status, result.time_ms, result.attempts, result.method, redirect, has_error, url
         );
 
         if let Some(error) = &result.error {

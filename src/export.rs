@@ -89,7 +89,7 @@ fn write_summary(html: &mut String, summary: &Summary) {
 
 fn write_results_table(html: &mut String, results: &[UrlCheckResult]) {
     html.push_str(
-        "  <h2>Results</h2>\n  <table>\n    <thead><tr><th>Status</th><th>Time</th><th>Attempts</th><th>Redirect</th><th>URL</th><th>Final URL</th><th>Error</th></tr></thead>\n    <tbody>\n",
+        "  <h2>Results</h2>\n  <table>\n    <thead><tr><th>Status</th><th>Time</th><th>Attempts</th><th>Method</th><th>Redirect</th><th>URL</th><th>Final URL</th><th>Error</th></tr></thead>\n    <tbody>\n",
     );
 
     for result in results {
@@ -106,11 +106,12 @@ fn write_results_table(html: &mut String, results: &[UrlCheckResult]) {
             .unwrap_or_else(|| "ERR".to_string());
         let _ = write!(
             html,
-            "      <tr class=\"{}\"><td>{}</td><td>{}ms</td><td>{}</td><td>{}</td><td><code>{}</code></td><td><code>{}</code></td><td>{}</td></tr>\n",
+            "      <tr class=\"{}\"><td>{}</td><td>{}ms</td><td>{}</td><td>{}</td><td>{}</td><td><code>{}</code></td><td><code>{}</code></td><td>{}</td></tr>\n",
             class,
             escape_html(&status),
             result.time_ms,
             result.attempts,
+            escape_html(&result.method),
             if result.redirected { "yes" } else { "no" },
             escape_html(&result.url),
             escape_html(&result.final_url),

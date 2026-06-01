@@ -8,8 +8,9 @@ mod sitemap;
 use anyhow::Result;
 use checker::check_urls;
 use clap::Parser;
-use cli::{Cli, Commands};
+use cli::{Cli, Commands, HttpMethodArg};
 use export::{export_csv, export_html, export_json};
+use models::RequestMethod;
 use report::{print_results, print_summary, summarize};
 use sitemap::discover_urls;
 
@@ -28,7 +29,13 @@ async fn main() -> Result<()> {
 
             println!("Checking sitemap: {}", args.sitemap_url);
             println!("Concurrency: {}", args.concurrency);
+            let method = match args.method {
+                HttpMethodArg::Get => RequestMethod::Get,
+                HttpMethodArg::Head => RequestMethod::Head,
+            };
+
             println!("Timeout: {}s", args.timeout);
+            println!("Method: {}", method);
             println!("Retries: {}", args.retries);
             println!();
 
@@ -43,7 +50,8 @@ async fn main() -> Result<()> {
             }
             println!();
 
-            let results = check_urls(&urls, args.concurrency, args.timeout, args.retries).await;
+            let results =
+                check_urls(&urls, args.concurrency, args.timeout, args.retries, method).await;
             print_results(&results, args.only_errors);
 
             if let Some(path) = args.export.as_deref() {
