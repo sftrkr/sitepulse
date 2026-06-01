@@ -15,6 +15,8 @@ pub struct CheckConfig {
     pub export: Option<PathBuf>,
     pub export_json: Option<PathBuf>,
     pub export_html: Option<PathBuf>,
+    pub export_junit: Option<PathBuf>,
+    pub export_sarif: Option<PathBuf>,
     pub retries: Option<usize>,
     pub sitemap_retries: Option<usize>,
     pub max_urls: Option<usize>,
@@ -74,6 +76,12 @@ pub fn apply_check_config(args: &mut CheckArgs, config: CheckConfig) {
     }
     if let Some(value) = config.export_html {
         args.export_html = Some(value);
+    }
+    if let Some(value) = config.export_junit {
+        args.export_junit = Some(value);
+    }
+    if let Some(value) = config.export_sarif {
+        args.export_sarif = Some(value);
     }
     if let Some(value) = config.retries {
         args.retries = value;

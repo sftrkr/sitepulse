@@ -18,7 +18,7 @@ use checker::check_urls;
 use clap::Parser;
 use cli::{Cli, Commands, HttpMethodArg};
 use config::{apply_check_config, load_check_config};
-use export::{export_csv, export_html, export_json};
+use export::{export_csv, export_html, export_json, export_junit, export_sarif};
 use models::RequestMethod;
 use report::{print_results, print_summary, summarize};
 use robots::{fetch_robots_rules, filter_allowed_by_robots};
@@ -131,6 +131,24 @@ async fn main() -> Result<()> {
             if let Some(path) = args.export_html.as_deref() {
                 export_html(path, &results, &summary)?;
                 println!("\nHTML report written to: {}", path.display());
+            }
+
+            if let Some(path) = args.export_junit.as_deref() {
+                export_junit(path, &results)?;
+                println!(
+                    "
+JUnit XML report written to: {}",
+                    path.display()
+                );
+            }
+
+            if let Some(path) = args.export_sarif.as_deref() {
+                export_sarif(path, &results)?;
+                println!(
+                    "
+SARIF report written to: {}",
+                    path.display()
+                );
             }
 
             print_summary(&summary);

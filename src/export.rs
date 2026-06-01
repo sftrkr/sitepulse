@@ -36,6 +36,120 @@ pub fn export_html(path: &Path, results: &[UrlCheckResult], summary: &Summary) -
     Ok(())
 }
 
+pub fn export_junit(path: &Path, results: &[UrlCheckResult]) -> Result<()> {
+    let failures = results.iter().filter(|result| result.is_error()).count();
+    let mut xml = String::new();
+    xml.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    let _ = writeln!(
+        xml,
+        "<testsuite name=\"sitepulse\" tests=\"{}\" failures=\"{}\" errors=\"0\">",
+        results.len(),
+        failures
+    );
+
+    for result in results {
+        let status = result
+            .status
+            .map(|status| status.to_string())
+            .unwrap_or_else(|| "ERR".to_string());
+        let _ = writeln!(
+            xml,
+            "  <testcase classname=\"sitepulse.url\" name=\"{}\" time=\"{:.3}\">",
+            escape_xml(&result.url),
+            result.time_ms as f64 / 1000.0
+        );
+        if result.is_error() {
+            let message = result
+                .error
+                .clone()
+                .unwrap_or_else(|| format!("HTTP status {status}"));
+            let _ = writeln!(
+                xml,
+                "    <failure message=\"{}\">status={} final_url={} attempts={}</failure>",
+                escape_xml(&message),
+                escape_xml(&status),
+                escape_xml(&result.final_url),
+                result.attempts
+            );
+        }
+        xml.push_str("  </testcase>\n");
+    }
+    xml.push_str("</testsuite>\n");
+    std::fs::write(path, xml)
+        .with_context(|| format!("failed to write JUnit XML file: {}", path.display()))?;
+    Ok(())
+}
+
+pub fn export_sarif(path: &Path, results: &[UrlCheckResult]) -> Result<()> {
+    let mut sarif_results = Vec::new();
+    for result in results.iter().filter(|result| result.is_error()) {
+        let level = match result.status {
+            Some(500..=599) | None => "error",
+            Some(400..=499) => "warning",
+            _ => "note",
+        };
+        let status = result
+            .status
+            .map(|status| status.to_string())
+            .unwrap_or_else(|| "network-error".to_string());
+        let message = result
+            .error
+            .clone()
+            .unwrap_or_else(|| format!("URL returned HTTP status {status}"));
+        sarif_results.push(serde_json::json!({
+            "ruleId": "sitepulse.url-check",
+            "level": level,
+            "message": { "text": message },
+            "locations": [{
+                "physicalLocation": {
+                    "artifactLocation": { "uri": result.url }
+                }
+            }],
+            "properties": {
+                "status": result.status,
+                "time_ms": result.time_ms,
+                "redirected": result.redirected,
+                "final_url": result.final_url,
+                "attempts": result.attempts,
+                "method": result.method
+            }
+        }));
+    }
+    let sarif = serde_json::json!({
+        "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+        "version": "2.1.0",
+        "runs": [{
+            "tool": {
+                "driver": {
+                    "name": "sitepulse",
+                    "informationUri": "https://github.com/sftrkr/sitepulse",
+                    "rules": [{
+                        "id": "sitepulse.url-check",
+                        "name": "URL health check",
+                        "shortDescription": { "text": "A sitemap URL returned an HTTP or network error" },
+                        "helpUri": "https://github.com/sftrkr/sitepulse"
+                    }]
+                }
+            },
+            "results": sarif_results
+        }]
+    });
+    let file = std::fs::File::create(path)
+        .with_context(|| format!("failed to create SARIF file: {}", path.display()))?;
+    serde_json::to_writer_pretty(file, &sarif)
+        .with_context(|| format!("failed to write SARIF file: {}", path.display()))?;
+    Ok(())
+}
+
+fn escape_xml(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
+}
+
 fn write_html_header(html: &mut String) {
     html.push_str(
         r#"<!doctype html>
@@ -154,6 +268,46 @@ fn escape_html(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn exports_junit_xml() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("report.xml");
+        let results = vec![sample_error_result()];
+        export_junit(&path, &results).unwrap();
+        let xml = std::fs::read_to_string(path).unwrap();
+        assert!(xml.contains("<testsuite"));
+        assert!(xml.contains("failures=\"1\""));
+        assert!(xml.contains("&amp;"));
+    }
+
+    #[test]
+    fn exports_sarif() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("report.sarif");
+        let results = vec![sample_error_result()];
+        export_sarif(&path, &results).unwrap();
+        let value: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+        assert_eq!(value["version"], "2.1.0");
+        assert_eq!(value["runs"][0]["results"].as_array().unwrap().len(), 1);
+    }
+
+    fn sample_error_result() -> UrlCheckResult {
+        UrlCheckResult {
+            url: "https://example.com/missing?a=1&b=2".to_string(),
+            status: Some(404),
+            time_ms: 100,
+            redirected: false,
+            final_url: "https://example.com/missing".to_string(),
+            error: None,
+            attempts: 1,
+            method: "GET".to_string(),
+            title: None,
+            meta_description: None,
+            canonical_url: None,
+        }
+    }
 
     #[test]
     fn escapes_html_special_characters() {

@@ -108,6 +108,8 @@ Options:
 | `--export <FILE>` | Write results to a CSV file | None |
 | `--export-json <FILE>` | Write results to a JSON file | None |
 | `--export-html <FILE>` | Write an HTML report | None |
+| `--export-junit <FILE>` | Write URL check results as JUnit XML for CI systems | None |
+| `--export-sarif <FILE>` | Write URL check findings as SARIF for code scanning systems | None |
 | `--fail-on-errors` | Exit with code `2` if any `4xx`, `5xx`, timeout, or network error is found | Disabled |
 | `--retries <N>` | Retry failed URL checks and `5xx` responses | `0` |
 | `--sitemap-retries <N>` | Retry sitemap downloads before failing | `2` |
@@ -373,7 +375,8 @@ Potential next improvements:
 
 - [ ] Publish GitHub release notes and binaries for `v0.1.0`
 - [ ] Add Homebrew formula or prebuilt release binaries
-- [ ] Add SARIF/JUnit-style CI export
+- [x] Add JUnit-style CI export
+- [x] Add SARIF CI export
 - [ ] Add advanced per-host rate limiting controls
 - [ ] Add richer structured data validation for JSON-LD schema types
 

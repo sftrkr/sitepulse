@@ -67,6 +67,14 @@ pub struct CheckArgs {
     #[arg(long)]
     pub export_html: Option<PathBuf>,
 
+    /// Export URL check results as JUnit XML for CI systems
+    #[arg(long)]
+    pub export_junit: Option<PathBuf>,
+
+    /// Export URL check findings as SARIF for code scanning systems
+    #[arg(long)]
+    pub export_sarif: Option<PathBuf>,
+
     /// Retry failed URL checks and 5xx responses this many times
     #[arg(long, default_value_t = 0)]
     pub retries: usize,
