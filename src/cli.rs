@@ -71,6 +71,10 @@ pub struct CheckArgs {
     #[arg(long)]
     pub respect_robots: bool,
 
+    /// Run an agent readiness audit for the sitemap host
+    #[arg(long)]
+    pub agent_ready: bool,
+
     /// Exit with a non-zero status code if any error is found
     #[arg(long)]
     pub fail_on_errors: bool,

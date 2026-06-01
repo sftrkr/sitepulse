@@ -29,6 +29,7 @@ Current features:
 - Optional title, meta description, and canonical URL extraction
 - Same-host filtering option
 - Optional robots.txt filtering
+- Initial agent readiness audit (`--agent-ready`)
 - Maximum URL limit option
 - CSV export
 - JSON export
@@ -104,6 +105,7 @@ Options:
 | `--max-urls <N>` | Limit how many discovered URLs are checked | None |
 | `--same-host-only` | Only check URLs whose host matches the sitemap URL host | Disabled |
 | `--respect-robots` | Filter out URLs disallowed by robots.txt | Disabled |
+| `--agent-ready` | Run an agent readiness audit for the sitemap host | Disabled |
 
 Examples:
 
@@ -146,6 +148,9 @@ cargo run -- check https://example.com/sitemap.xml --same-host-only
 ```bash
 cargo run -- check https://example.com/sitemap.xml --respect-robots
 ```
+
+```bash
+cargo run -- check https://example.com/sitemap.xml --agent-ready
 
 Multiple options can be used together:
 
@@ -286,6 +291,7 @@ Completed:
 - [x] Optional title, meta description, and canonical URL extraction
 - [x] Same-host filtering option
 - [x] Optional robots.txt filtering
+- [x] Initial agent readiness audit (`--agent-ready`)
 - [x] Maximum URL limit option
 - [x] CSV export
 - [x] JSON export
@@ -299,18 +305,18 @@ Completed:
 
 Potential next improvements:
 
-- [ ] Agent readiness audit (`--agent-ready`)
+- [ ] Expanded agent readiness audit (`--agent-ready`)
   - [ ] Discoverability
-    - [ ] Check `robots.txt` accessibility
-    - [ ] Check sitemap directives in `robots.txt`
+    - [x] Check `robots.txt` accessibility
+    - [x] Check sitemap directives in `robots.txt`
     - [ ] Check homepage discovery `Link` headers
     - [ ] Check DNS for AI Discovery (DNS-AID) records
   - [ ] Content accessibility
-    - [ ] Check `llms.txt` availability
-    - [ ] Check `llms-full.txt` availability
+    - [x] Check `llms.txt` availability
+    - [x] Check `llms-full.txt` availability
     - [ ] Check Markdown content negotiation
   - [ ] Bot access control
-    - [ ] Detect AI bot rules in `robots.txt`
+    - [x] Detect AI bot rules in `robots.txt`
     - [ ] Detect whether known AI agents are blocked or allowed
     - [ ] Check Content Signals headers/metadata
     - [ ] Check Web Bot Auth signals
@@ -325,16 +331,16 @@ Potential next improvements:
     - [ ] Check `auth.md`
   - [ ] Page intelligence signals
     - [ ] Analyze homepage title, meta description, canonical URL, and OpenGraph metadata
-    - [ ] Detect JSON-LD structured data
-    - [ ] Report semantic HTML signals such as `<main>` and `<h1>`
+    - [x] Detect JSON-LD structured data
+    - [x] Report semantic HTML signals such as `<main>` and `<h1>`
   - [ ] Commerce readiness
     - [ ] Check x402
     - [ ] Check MPP
     - [ ] Check UCP
     - [ ] Check ACP
   - [ ] Scoring/reporting
-    - [ ] Provide an agent readiness score
-    - [ ] Provide PASS/WARN/FAIL checklist
+    - [x] Provide an agent readiness score
+    - [x] Provide PASS/WARN/FAIL checklist
     - [ ] Add JSON/HTML export support for agent readiness results
 
 ## Notes

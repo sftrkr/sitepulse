@@ -1,3 +1,4 @@
+mod agent;
 mod checker;
 mod cli;
 mod export;
@@ -7,6 +8,7 @@ mod report;
 mod robots;
 mod sitemap;
 
+use agent::{audit_agent_readiness, print_agent_readiness_report};
 use anyhow::Result;
 use checker::check_urls;
 use clap::Parser;
@@ -105,6 +107,11 @@ async fn main() -> Result<()> {
             }
 
             print_summary(&summary);
+
+            if args.agent_ready {
+                let agent_report = audit_agent_readiness(&args.sitemap_url, args.timeout).await?;
+                print_agent_readiness_report(&agent_report);
+            }
 
             if args.fail_on_errors && summary.has_errors() {
                 std::process::exit(2);
