@@ -1,6 +1,7 @@
 mod agent;
 mod checker;
 mod cli;
+mod config;
 mod export;
 mod meta;
 mod models;
@@ -16,6 +17,7 @@ use anyhow::Result;
 use checker::check_urls;
 use clap::Parser;
 use cli::{Cli, Commands, HttpMethodArg};
+use config::{apply_check_config, load_check_config};
 use export::{export_csv, export_html, export_json};
 use models::RequestMethod;
 use report::{print_results, print_summary, summarize};
@@ -28,7 +30,12 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Check(args) => {
+        Commands::Check(mut args) => {
+            if let Some(path) = args.config.as_deref() {
+                let config = load_check_config(path)?;
+                apply_check_config(&mut args, config);
+            }
+
             if args.concurrency == 0 {
                 anyhow::bail!("--concurrency must be greater than 0");
             }

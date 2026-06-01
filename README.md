@@ -96,6 +96,7 @@ Options:
 
 | Option | Description | Default |
 | --- | --- | --- |
+| `--config <FILE>` | Load check options from a JSON config file | None |
 | `--concurrency <N>` | Number of concurrent HTTP checks | `10` |
 | `--timeout <SECONDS>` | Request timeout in seconds | `10` |
 | `--user-agent <VALUE>` | Custom User-Agent for all HTTP requests | `sitepulse/0.1 (+https://example.local)` |
@@ -280,6 +281,25 @@ examples/
   sitemap.xml  # Example sitemap for testing
 ```
 
+## Configuration file
+
+``--config`` accepts a JSON file with check options. Example:
+
+```json
+{
+  "concurrency": 5,
+  "timeout": 15,
+  "method": "head",
+  "analyze_meta": true,
+  "same_host_only": true,
+  "respect_robots": true,
+  "agent_ready": true,
+  "agent_ready_fail_under": 70
+}
+```
+
+Command-line options are parsed first, then config values are applied. For repeated audits, keep shared defaults in a config file and pass target-specific values such as the sitemap URL on the command line.
+
 ## Development
 
 Format code:
@@ -346,7 +366,7 @@ Potential next improvements:
 
 - [ ] Publish GitHub release notes and binaries for `v0.1.0`
 - [ ] Add packaged install instructions (`cargo install`, Homebrew, or prebuilt binaries)
-- [ ] Add configuration file support for repeated audits
+- [x] Add configuration file support for repeated audits
 - [ ] Add SARIF/JUnit-style CI export
 - [ ] Add rate limiting and per-host politeness controls
 - [ ] Add richer structured data validation for JSON-LD schema types

@@ -23,6 +23,10 @@ pub struct CheckArgs {
     /// Sitemap XML URL to check
     pub sitemap_url: String,
 
+    /// Load check options from a JSON config file
+    #[arg(long)]
+    pub config: Option<PathBuf>,
+
     /// Number of concurrent HTTP checks
     #[arg(long, default_value_t = 10)]
     pub concurrency: usize,
