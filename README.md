@@ -329,45 +329,23 @@ Completed:
 - [x] README
 - [x] Integration tests with a local HTTP server
 
+- [x] Expanded agent readiness audit (`--agent-ready`)
+  - [x] Discoverability checks: `robots.txt`, sitemap directives, `Link` headers, DNS-AID
+  - [x] Content accessibility checks: `llms.txt`, `llms-full.txt`, Markdown negotiation
+  - [x] Bot access control checks: AI bot rules, allow/block detection, Content Signals, Web Bot Auth
+  - [x] Protocol discovery checks: MCP, Agent Skills, WebMCP, A2A, API catalog, OAuth, `auth.md`
+  - [x] Page intelligence checks: title, meta description, canonical URL, OpenGraph, JSON-LD, semantic HTML
+  - [x] Commerce readiness checks: x402, MPP, UCP, ACP
+  - [x] Scoring/reporting: score, PASS/WARN/FAIL checklist, JSON/HTML exports
+
 Potential next improvements:
 
-- [x] Expanded agent readiness audit (`--agent-ready`)
-  - [x] Discoverability
-    - [x] Check `robots.txt` accessibility
-    - [x] Check sitemap directives in `robots.txt`
-    - [x] Check homepage discovery `Link` headers
-    - [x] Check DNS for AI Discovery (DNS-AID) records
-  - [x] Content accessibility
-    - [x] Check `llms.txt` availability
-    - [x] Check `llms-full.txt` availability
-    - [x] Check Markdown content negotiation
-  - [x] Bot access control
-    - [x] Detect AI bot rules in `robots.txt`
-    - [x] Detect whether known AI agents are blocked or allowed
-    - [x] Check Content Signals headers/metadata
-    - [x] Check Web Bot Auth signals
-  - [x] Protocol discovery
-    - [x] Check MCP Server Card
-    - [x] Check Agent Skills
-    - [x] Check WebMCP
-    - [x] Check A2A Agent Card
-    - [x] Check API catalog
-    - [x] Check OAuth discovery
-    - [x] Check OAuth Protected Resource metadata
-    - [x] Check `auth.md`
-  - [x] Page intelligence signals
-    - [x] Analyze homepage title, meta description, canonical URL, and OpenGraph metadata
-    - [x] Detect JSON-LD structured data
-    - [x] Report semantic HTML signals such as `<main>` and `<h1>`
-  - [x] Commerce readiness
-    - [x] Check x402
-    - [x] Check MPP
-    - [x] Check UCP
-    - [x] Check ACP
-  - [x] Scoring/reporting
-    - [x] Provide an agent readiness score
-    - [x] Provide PASS/WARN/FAIL checklist
-    - [x] Add JSON/HTML export support for agent readiness results
+- [ ] Publish GitHub release notes and binaries for `v0.1.0`
+- [ ] Add packaged install instructions (`cargo install`, Homebrew, or prebuilt binaries)
+- [ ] Add configuration file support for repeated audits
+- [ ] Add SARIF/JUnit-style CI export
+- [ ] Add rate limiting and per-host politeness controls
+- [ ] Add richer structured data validation for JSON-LD schema types
 
 ## Notes
 
