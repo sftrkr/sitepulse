@@ -23,6 +23,8 @@ Current features:
 - Timeout support
 - Concurrency support
 - Option to show only errors
+- Retry support for network errors and `5xx` responses
+- Maximum URL limit option
 - CSV export
 - Summary report
 - Top 10 slowest URLs
@@ -85,6 +87,8 @@ Options:
 | `--timeout <SECONDS>` | Request timeout in seconds | `10` |
 | `--only-errors` | Show only network errors and `4xx`/`5xx` responses | Disabled |
 | `--export <FILE>` | Write results to a CSV file | None |
+| `--retries <N>` | Retry failed requests and `5xx` responses | `0` |
+| `--max-urls <N>` | Limit how many discovered URLs are checked | None |
 
 Examples:
 
@@ -104,12 +108,22 @@ cargo run -- check https://example.com/sitemap.xml --only-errors
 cargo run -- check https://example.com/sitemap.xml --export report.csv
 ```
 
+```bash
+cargo run -- check https://example.com/sitemap.xml --retries 2
+```
+
+```bash
+cargo run -- check https://example.com/sitemap.xml --max-urls 100
+```
+
 Multiple options can be used together:
 
 ```bash
 cargo run -- check https://example.com/sitemap.xml \
   --concurrency 20 \
   --timeout 10 \
+  --retries 2 \
+  --max-urls 1000 \
   --only-errors \
   --export report.csv
 ```
@@ -120,13 +134,16 @@ cargo run -- check https://example.com/sitemap.xml \
 Checking sitemap: https://example.com/sitemap.xml
 Concurrency: 20
 Timeout: 10s
+Retries: 2
 
 Discovered URLs: 1240
 
-[200] 184ms https://example.com/
-[301] 96ms https://example.com/old -> https://example.com/new
-[404] 121ms https://example.com/missing-page
-[500] 430ms https://example.com/broken
+STATUS      TIME ATTEMPTS  REDIRECT    ERROR URL
+------------------------------------------------------------------------------------------
+200        184ms        1        no       no https://example.com/
+301         96ms        1       yes       no https://example.com/old -> https://example.com/new
+404        121ms        1        no       no https://example.com/missing-page
+500        430ms        3        no       no https://example.com/broken
 
 Summary:
 Total: 1240
@@ -158,6 +175,7 @@ CSV fields:
 - `redirected`
 - `final_url`
 - `error`
+- `attempts`
 
 ## Project structure
 
@@ -208,6 +226,8 @@ Completed:
 - [x] Concurrency
 - [x] Timeout
 - [x] `--only-errors`
+- [x] Retry support
+- [x] Maximum URL limit option
 - [x] CSV export
 - [x] Sitemap index support
 - [x] Slow URL list
@@ -221,8 +241,6 @@ Potential next improvements:
 - [ ] Robots.txt checks
 - [ ] Canonical URL checks
 - [ ] Title/meta description checks
-- [ ] Retry support
-- [ ] Maximum URL limit option
 - [ ] Explicit tests for gzip sitemap support
 
 ## Notes

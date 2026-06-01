@@ -8,6 +8,7 @@ pub struct UrlCheckResult {
     pub redirected: bool,
     pub final_url: String,
     pub error: Option<String>,
+    pub attempts: usize,
 }
 
 impl UrlCheckResult {

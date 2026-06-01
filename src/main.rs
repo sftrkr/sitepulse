@@ -29,13 +29,21 @@ async fn main() -> Result<()> {
             println!("Checking sitemap: {}", args.sitemap_url);
             println!("Concurrency: {}", args.concurrency);
             println!("Timeout: {}s", args.timeout);
+            println!("Retries: {}", args.retries);
             println!();
 
-            let urls = discover_urls(&args.sitemap_url, args.timeout).await?;
-            println!("Discovered URLs: {}", urls.len());
+            let mut urls = discover_urls(&args.sitemap_url, args.timeout).await?;
+            let discovered_count = urls.len();
+            if let Some(max_urls) = args.max_urls {
+                urls.truncate(max_urls);
+            }
+            println!("Discovered URLs: {}", discovered_count);
+            if urls.len() != discovered_count {
+                println!("Checking URLs: {}", urls.len());
+            }
             println!();
 
-            let results = check_urls(&urls, args.concurrency, args.timeout).await;
+            let results = check_urls(&urls, args.concurrency, args.timeout, args.retries).await;
             print_results(&results, args.only_errors);
 
             if let Some(path) = args.export.as_deref() {

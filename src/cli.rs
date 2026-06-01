@@ -38,4 +38,12 @@ pub struct CheckArgs {
     /// Export full result table as CSV
     #[arg(long)]
     pub export: Option<PathBuf>,
+
+    /// Retry failed requests and 5xx responses this many times
+    #[arg(long, default_value_t = 0)]
+    pub retries: usize,
+
+    /// Limit the number of discovered URLs to check
+    #[arg(long)]
+    pub max_urls: Option<usize>,
 }

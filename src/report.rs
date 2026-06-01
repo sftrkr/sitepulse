@@ -1,19 +1,44 @@
 use crate::models::{Summary, UrlCheckResult};
 
 pub fn print_results(results: &[UrlCheckResult], only_errors: bool) {
-    for result in results {
-        if only_errors && !result.is_error() {
-            continue;
-        }
+    let visible_results: Vec<&UrlCheckResult> = results
+        .iter()
+        .filter(|result| !only_errors || result.is_error())
+        .collect();
 
-        match (&result.status, &result.error) {
-            (Some(status), None) if result.redirected => println!(
-                "[{}] {}ms {} -> {}",
-                status, result.time_ms, result.url, result.final_url
-            ),
-            (Some(status), None) => println!("[{}] {}ms {}", status, result.time_ms, result.url),
-            (_, Some(error)) => println!("[ERR] {}ms {} ({})", result.time_ms, result.url, error),
-            _ => println!("[ERR] {}ms {}", result.time_ms, result.url),
+    if visible_results.is_empty() {
+        if only_errors {
+            println!("No errors found.");
+        }
+        return;
+    }
+
+    println!(
+        "{:<8} {:>7} {:>8} {:>9} {:>8} {}",
+        "STATUS", "TIME", "ATTEMPTS", "REDIRECT", "ERROR", "URL"
+    );
+    println!("{}", "-".repeat(90));
+
+    for result in visible_results {
+        let status = result
+            .status
+            .map(|status| status.to_string())
+            .unwrap_or_else(|| "ERR".to_string());
+        let redirect = if result.redirected { "yes" } else { "no" };
+        let has_error = if result.error.is_some() { "yes" } else { "no" };
+        let url = if result.redirected {
+            format!("{} -> {}", result.url, result.final_url)
+        } else {
+            result.url.clone()
+        };
+
+        println!(
+            "{:<8} {:>6}ms {:>8} {:>9} {:>8} {}",
+            status, result.time_ms, result.attempts, redirect, has_error, url
+        );
+
+        if let Some(error) = &result.error {
+            println!("{:<8} {}", "", error);
         }
     }
 }
