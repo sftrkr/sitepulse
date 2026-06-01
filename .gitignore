@@ -19,3 +19,6 @@ report.html
 .DS_Store
 .idea/
 .vscode/
+
+# Project brief / local planning
+PROJECT.md
