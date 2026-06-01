@@ -39,8 +39,8 @@ pub struct AgentReadinessCheck {
 #[derive(Debug, Clone, Serialize)]
 pub struct AgentReadinessReport {
     pub site_url: String,
-    pub score: u8,
-    pub max_score: u8,
+    pub score: u16,
+    pub max_score: u16,
     pub checks: Vec<AgentReadinessCheck>,
 }
 
@@ -211,8 +211,8 @@ pub async fn audit_agent_readiness(
         )),
     }
 
-    let score = checks.iter().map(|c| c.points).sum();
-    let max_score = checks.iter().map(|c| c.max_points).sum();
+    let score = checks.iter().map(|c| c.points as u16).sum();
+    let max_score = checks.iter().map(|c| c.max_points as u16).sum();
     Ok(AgentReadinessReport {
         site_url: site_url.to_string(),
         score,
