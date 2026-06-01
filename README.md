@@ -255,10 +255,10 @@ Completed:
 - [x] Sitemap index support
 - [x] Slow URL list
 - [x] README
+- [x] Integration tests with a local HTTP server
 
 Potential next improvements:
 
-- [ ] More readable table output
 - [ ] Robots.txt checks
 - [ ] Canonical URL checks
 - [ ] Title/meta description checks

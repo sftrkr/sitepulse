@@ -9,7 +9,11 @@
 
 # Generated reports
 report.csv
+report.json
+report.html
 *.csv
+*.json
+*.html
 
 # OS/editor files
 .DS_Store
