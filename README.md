@@ -375,3 +375,18 @@ Potential next improvements:
 - If the sitemap cannot be downloaded or the XML is invalid, the program returns a clear error.
 - Redirects are followed and the final URL is recorded.
 - Duplicate URLs are deduplicated.
+
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+
+## Security
+
+Please see [SECURITY.md](SECURITY.md) for vulnerability reporting guidelines.
+
+
+## Changelog
+
+Please see [CHANGELOG.md](CHANGELOG.md) for release history.
