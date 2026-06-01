@@ -27,6 +27,7 @@ Current features:
 - Maximum URL limit option
 - CSV export
 - JSON export
+- HTML report export
 - CI-friendly non-zero exit option
 - Summary report
 - Top 10 slowest URLs
@@ -90,6 +91,7 @@ Options:
 | `--only-errors` | Show only network errors and `4xx`/`5xx` responses | Disabled |
 | `--export <FILE>` | Write results to a CSV file | None |
 | `--export-json <FILE>` | Write results to a JSON file | None |
+| `--export-html <FILE>` | Write an HTML report | None |
 | `--fail-on-errors` | Exit with code `2` if any `4xx`, `5xx`, timeout, or network error is found | Disabled |
 | `--retries <N>` | Retry failed requests and `5xx` responses | `0` |
 | `--max-urls <N>` | Limit how many discovered URLs are checked | None |
@@ -129,7 +131,9 @@ cargo run -- check https://example.com/sitemap.xml \
   --retries 2 \
   --max-urls 1000 \
   --only-errors \
-  --export report.csv
+  --export report.csv \
+  --export-json report.json \
+  --export-html report.html
 ```
 
 ## Example terminal output
@@ -177,6 +181,12 @@ Export to JSON:
 cargo run -- check https://example.com/sitemap.xml --export-json report.json
 ```
 
+Export to HTML:
+
+```bash
+cargo run -- check https://example.com/sitemap.xml --export-html report.html
+```
+
 CSV and JSON fields:
 
 - `url`
@@ -196,7 +206,7 @@ src/
   sitemap.rs   # Sitemap download, parsing, and discovery
   checker.rs   # URL HTTP checks
   report.rs    # Terminal output and summary report
-  export.rs    # CSV export
+  export.rs    # CSV, JSON, and HTML export
   models.rs    # Shared data models
 
 examples/
@@ -240,6 +250,7 @@ Completed:
 - [x] Maximum URL limit option
 - [x] CSV export
 - [x] JSON export
+- [x] HTML report export
 - [x] CI-friendly `--fail-on-errors` option
 - [x] Sitemap index support
 - [x] Slow URL list
@@ -248,7 +259,6 @@ Completed:
 Potential next improvements:
 
 - [ ] More readable table output
-- [ ] HTML report output
 - [ ] Robots.txt checks
 - [ ] Canonical URL checks
 - [ ] Title/meta description checks

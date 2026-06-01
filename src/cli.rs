@@ -43,6 +43,10 @@ pub struct CheckArgs {
     #[arg(long)]
     pub export_json: Option<PathBuf>,
 
+    /// Export an HTML report
+    #[arg(long)]
+    pub export_html: Option<PathBuf>,
+
     /// Retry failed requests and 5xx responses this many times
     #[arg(long, default_value_t = 0)]
     pub retries: usize,
