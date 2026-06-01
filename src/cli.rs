@@ -75,6 +75,14 @@ pub struct CheckArgs {
     #[arg(long)]
     pub agent_ready: bool,
 
+    /// Export agent readiness report as JSON
+    #[arg(long)]
+    pub agent_ready_export_json: Option<PathBuf>,
+
+    /// Export agent readiness report as HTML
+    #[arg(long)]
+    pub agent_ready_export_html: Option<PathBuf>,
+
     /// Exit with a non-zero status code if any error is found
     #[arg(long)]
     pub fail_on_errors: bool,

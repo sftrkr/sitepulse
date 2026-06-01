@@ -106,6 +106,8 @@ Options:
 | `--same-host-only` | Only check URLs whose host matches the sitemap URL host | Disabled |
 | `--respect-robots` | Filter out URLs disallowed by robots.txt | Disabled |
 | `--agent-ready` | Run an agent readiness audit for the sitemap host | Disabled |
+| `--agent-ready-export-json <FILE>` | Write agent readiness results to a JSON file | None |
+| `--agent-ready-export-html <FILE>` | Write agent readiness results to an HTML file | None |
 
 Examples:
 
@@ -341,7 +343,7 @@ Potential next improvements:
   - [ ] Scoring/reporting
     - [x] Provide an agent readiness score
     - [x] Provide PASS/WARN/FAIL checklist
-    - [ ] Add JSON/HTML export support for agent readiness results
+    - [x] Add JSON/HTML export support for agent readiness results
 
 ## Notes
 

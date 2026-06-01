@@ -8,7 +8,10 @@ mod report;
 mod robots;
 mod sitemap;
 
-use agent::{audit_agent_readiness, print_agent_readiness_report};
+use agent::{
+    audit_agent_readiness, export_agent_readiness_html, export_agent_readiness_json,
+    print_agent_readiness_report,
+};
 use anyhow::Result;
 use checker::check_urls;
 use clap::Parser;
@@ -108,9 +111,30 @@ async fn main() -> Result<()> {
 
             print_summary(&summary);
 
-            if args.agent_ready {
+            if args.agent_ready
+                || args.agent_ready_export_json.is_some()
+                || args.agent_ready_export_html.is_some()
+            {
                 let agent_report = audit_agent_readiness(&args.sitemap_url, args.timeout).await?;
                 print_agent_readiness_report(&agent_report);
+
+                if let Some(path) = args.agent_ready_export_json.as_deref() {
+                    export_agent_readiness_json(path, &agent_report)?;
+                    println!(
+                        "
+Agent readiness JSON report written to: {}",
+                        path.display()
+                    );
+                }
+
+                if let Some(path) = args.agent_ready_export_html.as_deref() {
+                    export_agent_readiness_html(path, &agent_report)?;
+                    println!(
+                        "
+Agent readiness HTML report written to: {}",
+                        path.display()
+                    );
+                }
             }
 
             if args.fail_on_errors && summary.has_errors() {

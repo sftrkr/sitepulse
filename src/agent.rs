@@ -2,12 +2,13 @@ use crate::meta::extract_page_meta;
 use anyhow::{Context, Result};
 use reqwest::header::{HeaderMap, HeaderName, ACCEPT, CONTENT_TYPE, LINK};
 use reqwest::Client;
+use serde::Serialize;
 use std::time::Duration;
 use url::Url;
 
 const USER_AGENT: &str = "sitepulse/0.1 (+https://example.local)";
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum AgentCheckStatus {
     Pass,
     Warn,
@@ -24,7 +25,7 @@ impl AgentCheckStatus {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct AgentReadinessCheck {
     pub status: AgentCheckStatus,
     pub name: String,
@@ -33,7 +34,7 @@ pub struct AgentReadinessCheck {
     pub max_points: u8,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct AgentReadinessReport {
     pub site_url: String,
     pub score: u8,
@@ -896,6 +897,76 @@ fn has_tag(html: &str, tag: &str) -> bool {
     html.to_ascii_lowercase().contains(&format!("<{tag}"))
 }
 
+pub fn export_agent_readiness_json(
+    path: &std::path::Path,
+    report: &AgentReadinessReport,
+) -> Result<()> {
+    let file = std::fs::File::create(path).with_context(|| {
+        format!(
+            "failed to create agent readiness JSON file: {}",
+            path.display()
+        )
+    })?;
+    serde_json::to_writer_pretty(file, report).with_context(|| {
+        format!(
+            "failed to write agent readiness JSON file: {}",
+            path.display()
+        )
+    })?;
+    Ok(())
+}
+
+pub fn export_agent_readiness_html(
+    path: &std::path::Path,
+    report: &AgentReadinessReport,
+) -> Result<()> {
+    let mut html = String::new();
+    html.push_str("<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>sitepulse agent readiness report</title><style>body{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:2rem;color:#172033}.score{font-size:2rem;font-weight:700}.pass{background:#ecfdf5}.warn{background:#fffbeb}.fail{background:#fff1f2}table{border-collapse:collapse;width:100%;margin-top:1rem}th,td{border-bottom:1px solid #e5e7eb;padding:.6rem;text-align:left;vertical-align:top}th{background:#f3f4f6}code{word-break:break-all}</style></head><body>");
+    html.push_str("<h1>sitepulse agent readiness report</h1>");
+    html.push_str(&format!(
+        "<p><strong>Site:</strong> <code>{}</code></p>",
+        escape_html(&report.site_url)
+    ));
+    html.push_str(&format!(
+        "<p class=\"score\">Score: {}/{}</p>",
+        report.score, report.max_score
+    ));
+    html.push_str("<table><thead><tr><th>Status</th><th>Check</th><th>Message</th><th>Points</th></tr></thead><tbody>");
+    for check in &report.checks {
+        let class = match check.status {
+            AgentCheckStatus::Pass => "pass",
+            AgentCheckStatus::Warn => "warn",
+            AgentCheckStatus::Fail => "fail",
+        };
+        html.push_str(&format!(
+            "<tr class=\"{}\"><td>{}</td><td>{}</td><td>{}</td><td>{}/{}</td></tr>",
+            class,
+            check.status.as_str(),
+            escape_html(&check.name),
+            escape_html(&check.message),
+            check.points,
+            check.max_points
+        ));
+    }
+    html.push_str("</tbody></table></body></html>\n");
+    std::fs::write(path, html).with_context(|| {
+        format!(
+            "failed to write agent readiness HTML file: {}",
+            path.display()
+        )
+    })?;
+    Ok(())
+}
+
+fn escape_html(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -925,6 +996,21 @@ mod tests {
         assert!(has_json_ld(html));
         assert!(has_tag(html, "main"));
         assert!(has_tag(html, "h1"));
+    }
+
+    #[test]
+    fn exports_agent_readiness_html() {
+        let report = AgentReadinessReport {
+            site_url: "https://example.com/".to_string(),
+            score: 1,
+            max_score: 1,
+            checks: vec![check_pass("Example", "works", 1)],
+        };
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("agent.html");
+        export_agent_readiness_html(&path, &report).unwrap();
+        let html = std::fs::read_to_string(path).unwrap();
+        assert!(html.contains("sitepulse agent readiness report"));
     }
 
     #[test]
