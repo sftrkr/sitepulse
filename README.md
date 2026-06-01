@@ -317,7 +317,7 @@ Potential next improvements:
     - [x] Check Markdown content negotiation
   - [ ] Bot access control
     - [x] Detect AI bot rules in `robots.txt`
-    - [ ] Detect whether known AI agents are blocked or allowed
+    - [x] Detect whether known AI agents are blocked or allowed
     - [ ] Check Content Signals headers/metadata
     - [ ] Check Web Bot Auth signals
   - [ ] Protocol discovery

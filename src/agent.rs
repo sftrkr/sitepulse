@@ -110,6 +110,7 @@ pub async fn audit_agent_readiness(
             )
         });
         checks.push(check_ai_bot_rules(body));
+        checks.push(check_ai_bot_access(body));
     } else {
         checks.push(check_warn(
             "Crawler access",
@@ -128,6 +129,12 @@ pub async fn audit_agent_readiness(
             "robots.txt unavailable, AI bot rules could not be evaluated",
             0,
             10,
+        ));
+        checks.push(check_warn(
+            "AI bot access",
+            "robots.txt unavailable, known AI bot access could not be evaluated",
+            0,
+            15,
         ));
     }
 
@@ -531,18 +538,105 @@ fn has_sitemap_directive(body: &str) -> bool {
     body.lines()
         .any(|l| l.trim_start().to_ascii_lowercase().starts_with("sitemap:"))
 }
+const KNOWN_AI_AGENTS: &[&str] = &[
+    "gptbot",
+    "chatgpt-user",
+    "claudebot",
+    "claude-user",
+    "perplexitybot",
+    "google-extended",
+    "ccbot",
+];
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RobotAccess {
+    Allowed,
+    Blocked,
+    Unspecified,
+}
+
+fn check_ai_bot_access(body: &str) -> AgentReadinessCheck {
+    let blocked = KNOWN_AI_AGENTS
+        .iter()
+        .filter(|agent| robot_access_for_agent(body, agent) == RobotAccess::Blocked)
+        .count();
+    let allowed = KNOWN_AI_AGENTS
+        .iter()
+        .filter(|agent| robot_access_for_agent(body, agent) == RobotAccess::Allowed)
+        .count();
+
+    if blocked == 0 && allowed > 0 {
+        check_pass(
+            "AI bot access",
+            &format!("{allowed} known AI bot(s) are explicitly allowed"),
+            15,
+        )
+    } else if blocked == 0 {
+        check_warn(
+            "AI bot access",
+            "known AI bot access is unspecified; generic robots rules may apply",
+            8,
+            15,
+        )
+    } else if blocked < KNOWN_AI_AGENTS.len() {
+        check_warn(
+            "AI bot access",
+            &format!("{blocked} known AI bot(s) are explicitly blocked"),
+            5,
+            15,
+        )
+    } else {
+        check_fail(
+            "AI bot access",
+            "all known AI bots are explicitly blocked",
+            0,
+            15,
+        )
+    }
+}
+
+fn robot_access_for_agent(body: &str, agent: &str) -> RobotAccess {
+    let mut current_applies = false;
+    let mut matched = false;
+    let mut disallow_root = false;
+    let mut explicit_allow_root = false;
+
+    for raw in body.lines() {
+        let line = raw.split('#').next().unwrap_or_default().trim();
+        if line.is_empty() {
+            continue;
+        }
+        let Some((key, value)) = line.split_once(':') else {
+            continue;
+        };
+        let key = key.trim().to_ascii_lowercase();
+        let value = value.trim();
+        if key == "user-agent" {
+            current_applies = value.eq_ignore_ascii_case(agent);
+            if current_applies {
+                matched = true;
+            }
+        } else if current_applies && key == "disallow" && value == "/" {
+            disallow_root = true;
+        } else if current_applies && key == "allow" && value == "/" {
+            explicit_allow_root = true;
+        }
+    }
+
+    if disallow_root {
+        RobotAccess::Blocked
+    } else if matched && explicit_allow_root {
+        RobotAccess::Allowed
+    } else if matched {
+        RobotAccess::Allowed
+    } else {
+        RobotAccess::Unspecified
+    }
+}
+
 fn check_ai_bot_rules(body: &str) -> AgentReadinessCheck {
-    let agents = [
-        "gptbot",
-        "chatgpt-user",
-        "claudebot",
-        "claude-user",
-        "perplexitybot",
-        "google-extended",
-        "ccbot",
-    ];
     let lower = body.to_ascii_lowercase();
-    let count = agents
+    let count = KNOWN_AI_AGENTS
         .iter()
         .filter(|a| lower.contains(&format!("user-agent: {a}")))
         .count();
@@ -653,6 +747,27 @@ mod tests {
         let html = r#"<meta property="og:title" content="Title"><meta property="og:description" content="Desc"><meta property="og:url" content="https://example.com/">"#;
         let check = check_open_graph(html);
         assert_eq!(check.status, AgentCheckStatus::Pass);
+    }
+
+    #[test]
+    fn detects_ai_bot_access() {
+        let robots = "User-agent: GPTBot
+Disallow: /
+
+User-agent: ClaudeBot
+Allow: /";
+        assert_eq!(
+            robot_access_for_agent(robots, "GPTBot"),
+            RobotAccess::Blocked
+        );
+        assert_eq!(
+            robot_access_for_agent(robots, "ClaudeBot"),
+            RobotAccess::Allowed
+        );
+        assert_eq!(
+            robot_access_for_agent(robots, "PerplexityBot"),
+            RobotAccess::Unspecified
+        );
     }
 
     #[test]
