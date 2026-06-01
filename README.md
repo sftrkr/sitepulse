@@ -318,7 +318,7 @@ Potential next improvements:
   - [ ] Bot access control
     - [x] Detect AI bot rules in `robots.txt`
     - [x] Detect whether known AI agents are blocked or allowed
-    - [ ] Check Content Signals headers/metadata
+    - [x] Check Content Signals headers/metadata
     - [ ] Check Web Bot Auth signals
   - [ ] Protocol discovery
     - [x] Check MCP Server Card

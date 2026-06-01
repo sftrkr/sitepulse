@@ -1,6 +1,6 @@
 use crate::meta::extract_page_meta;
 use anyhow::{Context, Result};
-use reqwest::header::{ACCEPT, CONTENT_TYPE, LINK};
+use reqwest::header::{HeaderMap, HeaderName, ACCEPT, CONTENT_TYPE, LINK};
 use reqwest::Client;
 use std::time::Duration;
 use url::Url;
@@ -56,7 +56,7 @@ pub async fn audit_agent_readiness(
     let llms = fetch_optional_text(&client, site_url.join("/llms.txt")?.as_str()).await;
     let llms_full = fetch_optional_text(&client, site_url.join("/llms-full.txt")?.as_str()).await;
     let homepage = fetch_optional_text(&client, site_url.as_str()).await;
-    let homepage_links = fetch_link_headers(&client, site_url.as_str()).await;
+    let homepage_headers = fetch_homepage_headers(&client, site_url.as_str()).await;
     let markdown = fetch_markdown_negotiation(&client, site_url.as_str()).await;
     let protocol_discovery = fetch_protocol_discovery(&client, &site_url).await;
     let mut checks = Vec::new();
@@ -140,7 +140,11 @@ pub async fn audit_agent_readiness(
 
     checks.push(check_text_file("llms.txt", &llms, 20));
     checks.push(check_text_file("llms-full.txt", &llms_full, 10));
-    checks.push(check_link_headers(&homepage_links));
+    checks.push(check_link_headers(&homepage_headers));
+    checks.push(check_content_signals(
+        &homepage_headers,
+        homepage_body(&homepage),
+    ));
     checks.push(check_markdown_negotiation(&markdown));
     checks.extend(check_protocol_discovery(&protocol_discovery));
 
@@ -247,6 +251,8 @@ async fn fetch_optional_text(client: &Client, url: &str) -> FetchResult {
 struct HeaderFetchResult {
     status: Option<u16>,
     links: Vec<String>,
+    content_signals: Vec<String>,
+    x_robots_tag: Vec<String>,
     error: Option<String>,
 }
 
@@ -258,25 +264,27 @@ struct MarkdownFetchResult {
     error: Option<String>,
 }
 
-async fn fetch_link_headers(client: &Client, url: &str) -> HeaderFetchResult {
+async fn fetch_homepage_headers(client: &Client, url: &str) -> HeaderFetchResult {
     match client.head(url).send().await {
         Ok(response) => {
             let status = response.status().as_u16();
-            let links = response
-                .headers()
-                .get_all(LINK)
-                .iter()
-                .filter_map(|value| value.to_str().ok().map(str::to_string))
-                .collect();
+            let headers = response.headers();
+            let links = header_values(headers, LINK);
+            let content_signals = header_values_by_name(headers, "content-signals");
+            let x_robots_tag = header_values_by_name(headers, "x-robots-tag");
             HeaderFetchResult {
                 status: Some(status),
                 links,
+                content_signals,
+                x_robots_tag,
                 error: None,
             }
         }
         Err(error) => HeaderFetchResult {
             status: None,
             links: Vec::new(),
+            content_signals: Vec::new(),
+            x_robots_tag: Vec::new(),
             error: Some(error.to_string()),
         },
     }
@@ -311,6 +319,79 @@ async fn fetch_markdown_negotiation(client: &Client, url: &str) -> MarkdownFetch
             error: Some(error.to_string()),
         },
     }
+}
+
+fn header_values(headers: &HeaderMap, name: HeaderName) -> Vec<String> {
+    headers
+        .get_all(name)
+        .iter()
+        .filter_map(|value| value.to_str().ok().map(str::to_string))
+        .collect()
+}
+
+fn header_values_by_name(headers: &HeaderMap, name: &str) -> Vec<String> {
+    let Ok(name) = HeaderName::from_bytes(name.as_bytes()) else {
+        return Vec::new();
+    };
+    header_values(headers, name)
+}
+
+fn homepage_body(homepage: &FetchResult) -> Option<&str> {
+    match homepage {
+        FetchResult::Ok(body) => Some(body.as_str()),
+        _ => None,
+    }
+}
+
+fn check_content_signals(
+    result: &HeaderFetchResult,
+    homepage_body: Option<&str>,
+) -> AgentReadinessCheck {
+    let meta_signals = homepage_body
+        .map(has_content_signal_metadata)
+        .unwrap_or(false);
+    let header_count = result.content_signals.len() + result.x_robots_tag.len();
+
+    if header_count > 0 || meta_signals {
+        let source = match (header_count > 0, meta_signals) {
+            (true, true) => "headers and metadata",
+            (true, false) => "headers",
+            (false, true) => "metadata",
+            (false, false) => "unknown",
+        };
+        check_pass(
+            "Content Signals",
+            &format!("content access signals found in {source}"),
+            10,
+        )
+    } else if let Some(error) = &result.error {
+        check_warn(
+            "Content Signals",
+            &format!("content signals could not be checked: {error}"),
+            0,
+            10,
+        )
+    } else {
+        check_warn(
+            "Content Signals",
+            "no Content Signals, X-Robots-Tag, or robots metadata found",
+            0,
+            10,
+        )
+    }
+}
+
+fn has_content_signal_metadata(html: &str) -> bool {
+    let lower = html.to_ascii_lowercase();
+    lower.contains("name=\"robots\"")
+        || lower.contains("name='robots'")
+        || lower.contains("name=\"googlebot\"")
+        || lower.contains("name='googlebot'")
+        || lower.contains("name=\"ai-policy\"")
+        || lower.contains("name='ai-policy'")
+        || lower.contains("tdm-reservation")
+        || lower.contains("noai")
+        || lower.contains("noimageai")
 }
 
 fn check_link_headers(result: &HeaderFetchResult) -> AgentReadinessCheck {
@@ -747,6 +828,17 @@ mod tests {
         let html = r#"<meta property="og:title" content="Title"><meta property="og:description" content="Desc"><meta property="og:url" content="https://example.com/">"#;
         let check = check_open_graph(html);
         assert_eq!(check.status, AgentCheckStatus::Pass);
+    }
+
+    #[test]
+    fn detects_content_signal_metadata() {
+        assert!(has_content_signal_metadata(
+            r#"<meta name="robots" content="index,follow">"#
+        ));
+        assert!(has_content_signal_metadata(
+            r#"<meta name="ai-policy" content="allow">"#
+        ));
+        assert!(!has_content_signal_metadata("<html></html>"));
     }
 
     #[test]
