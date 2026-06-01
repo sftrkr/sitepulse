@@ -26,7 +26,7 @@ Current features:
 - Option to show only errors
 - Retry support for network errors and `5xx` responses
 - GET/HEAD check method selection
-- Optional title and meta description extraction
+- Optional title, meta description, and canonical URL extraction
 - Same-host filtering option
 - Optional robots.txt filtering
 - Maximum URL limit option
@@ -94,7 +94,7 @@ Options:
 | `--concurrency <N>` | Number of concurrent HTTP checks | `10` |
 | `--timeout <SECONDS>` | Request timeout in seconds | `10` |
 | `--method <METHOD>` | HTTP method for URL checks: `get` or `head` | `get` |
-| `--analyze-meta` | Extract page title and meta description. Uses GET even with `--method=head` | Disabled |
+| `--analyze-meta` | Extract page title, meta description, and canonical URL. Uses GET even with `--method=head` | Disabled |
 | `--only-errors` | Show only network errors and `4xx`/`5xx` responses | Disabled |
 | `--export <FILE>` | Write results to a CSV file | None |
 | `--export-json <FILE>` | Write results to a JSON file | None |
@@ -230,6 +230,7 @@ CSV, JSON, and HTML result fields include:
 - `method`
 - `title`
 - `meta_description`
+- `canonical_url`
 
 ## Project structure
 
@@ -282,7 +283,7 @@ Completed:
 - [x] `--only-errors`
 - [x] Retry support
 - [x] GET/HEAD check method selection
-- [x] Optional title and meta description extraction
+- [x] Optional title, meta description, and canonical URL extraction
 - [x] Same-host filtering option
 - [x] Optional robots.txt filtering
 - [x] Maximum URL limit option
@@ -298,7 +299,6 @@ Completed:
 
 Potential next improvements:
 
-- [ ] Canonical URL checks
 
 ## Notes
 

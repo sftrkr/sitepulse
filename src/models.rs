@@ -28,6 +28,7 @@ pub struct UrlCheckResult {
     pub method: String,
     pub title: Option<String>,
     pub meta_description: Option<String>,
+    pub canonical_url: Option<String>,
 }
 
 impl UrlCheckResult {

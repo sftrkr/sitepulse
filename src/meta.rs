@@ -5,6 +5,7 @@ use quick_xml::Reader;
 pub struct PageMeta {
     pub title: Option<String>,
     pub description: Option<String>,
+    pub canonical_url: Option<String>,
 }
 
 pub fn extract_page_meta(html: &str) -> PageMeta {
@@ -21,6 +22,25 @@ pub fn extract_page_meta(html: &str) -> PageMeta {
                 let name = e.name().as_ref().to_ascii_lowercase();
                 if name == b"title" {
                     in_title = true;
+                } else if name == b"link" && meta.canonical_url.is_none() {
+                    let mut is_canonical = false;
+                    let mut href = None;
+
+                    for attr in e.attributes().flatten() {
+                        let key = attr.key.as_ref().to_ascii_lowercase();
+                        let value = String::from_utf8_lossy(attr.value.as_ref())
+                            .trim()
+                            .to_string();
+                        if key == b"rel" && value.eq_ignore_ascii_case("canonical") {
+                            is_canonical = true;
+                        } else if key == b"href" {
+                            href = Some(value);
+                        }
+                    }
+
+                    if is_canonical {
+                        meta.canonical_url = href.filter(|value| !value.is_empty());
+                    }
                 } else if name == b"meta" && meta.description.is_none() {
                     let mut is_description = false;
                     let mut content = None;
@@ -64,7 +84,7 @@ pub fn extract_page_meta(html: &str) -> PageMeta {
             _ => {}
         }
 
-        if meta.title.is_some() && meta.description.is_some() {
+        if meta.title.is_some() && meta.description.is_some() && meta.canonical_url.is_some() {
             break;
         }
         buf.clear();
@@ -78,13 +98,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn extracts_title_and_meta_description() {
+    fn extracts_title_meta_description_and_canonical() {
         let meta = extract_page_meta(
-            r#"<!doctype html><html><head><title> Example title </title><meta name="description" content="Example description"></head></html>"#,
+            r#"<!doctype html><html><head><title> Example title </title><meta name="description" content="Example description"><link rel="canonical" href="https://example.com/canonical"></head></html>"#,
         );
 
         assert_eq!(meta.title.as_deref(), Some("Example title"));
         assert_eq!(meta.description.as_deref(), Some("Example description"));
+        assert_eq!(
+            meta.canonical_url.as_deref(),
+            Some("https://example.com/canonical")
+        );
     }
 
     #[test]

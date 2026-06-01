@@ -106,6 +106,7 @@ async fn check_url_once(
                             method: RequestMethod::Get.to_string(),
                             title: None,
                             meta_description: None,
+                            canonical_url: None,
                         };
                     }
                 }
@@ -138,6 +139,7 @@ async fn check_url_once(
                 method: method_used.to_string(),
                 title: page_meta.title,
                 meta_description: page_meta.description,
+                canonical_url: page_meta.canonical_url,
             }
         }
         Err(err) => UrlCheckResult {
@@ -151,6 +153,7 @@ async fn check_url_once(
             method: effective_method.to_string(),
             title: None,
             meta_description: None,
+            canonical_url: None,
         },
     }
 }
@@ -171,6 +174,7 @@ mod tests {
             method: "GET".to_string(),
             title: None,
             meta_description: None,
+            canonical_url: None,
         }
     }
 
