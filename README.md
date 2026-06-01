@@ -1,8 +1,10 @@
 # sitepulse
 
-`sitepulse` is a Rust-based CLI tool that discovers page URLs from a `sitemap.xml` URL and reports each page's HTTP status, response time, redirect state, and final URL.
+`sitepulse` is a Rust-based CLI tool for technical SEO, sitemap health checks, and AI agent readiness audits.
 
-The project is designed for technical SEO, WordPress, WooCommerce, and e-commerce websites to detect broken links, `404`/`500` errors, redirects, and slow pages.
+It discovers URLs from a `sitemap.xml`, checks each page's HTTP status, response time, redirect state, final URL, and optional metadata, then produces terminal, CSV, JSON, and HTML reports. It also includes an `--agent-ready` audit inspired by emerging agent-web standards such as `llms.txt`, AI crawler rules, discovery headers, protocol discovery, structured data, DNS-AID, and agentic commerce signals.
+
+The project is designed for WordPress, WooCommerce, e-commerce, publisher, and SaaS websites that need to detect broken links, `404`/`500` errors, redirect issues, slow pages, metadata gaps, and whether the site is ready for AI agents and crawlers.
 
 ## Status
 
