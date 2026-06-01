@@ -3,7 +3,9 @@ use crate::models::{RequestMethod, UrlCheckResult};
 use futures::stream::{self, StreamExt};
 use reqwest::redirect::Policy;
 use reqwest::Client;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
+use tokio::sync::Mutex;
 use tokio::time::sleep;
 
 const MAX_REDIRECTS: usize = 10;
@@ -18,6 +20,7 @@ pub struct CheckOptions<'a> {
     pub analyze_meta: bool,
     pub user_agent: &'a str,
     pub delay_ms: u64,
+    pub rate_limit_per_second: Option<u64>,
 }
 
 pub async fn check_urls(urls: &[String], options: CheckOptions<'_>) -> Vec<UrlCheckResult> {
@@ -27,6 +30,11 @@ pub async fn check_urls(urls: &[String], options: CheckOptions<'_>) -> Vec<UrlCh
         .redirect(Policy::limited(MAX_REDIRECTS))
         .build()
         .expect("failed to build HTTP client");
+    let rate_limiter = options
+        .rate_limit_per_second
+        .filter(|rate| *rate > 0)
+        .map(RateLimiter::new)
+        .map(Arc::new);
 
     stream::iter(urls.iter().cloned())
         .map(|url| {
@@ -35,8 +43,18 @@ pub async fn check_urls(urls: &[String], options: CheckOptions<'_>) -> Vec<UrlCh
             let retries = options.retries;
             let analyze_meta = options.analyze_meta;
             let delay_ms = options.delay_ms;
+            let rate_limiter = rate_limiter.clone();
             async move {
-                check_url_with_retries(&client, url, retries, method, analyze_meta, delay_ms).await
+                check_url_with_retries(
+                    &client,
+                    url,
+                    retries,
+                    method,
+                    analyze_meta,
+                    delay_ms,
+                    rate_limiter,
+                )
+                .await
             }
         })
         .buffer_unordered(options.concurrency)
@@ -51,11 +69,15 @@ async fn check_url_with_retries(
     method: RequestMethod,
     analyze_meta: bool,
     delay_ms: u64,
+    rate_limiter: Option<Arc<RateLimiter>>,
 ) -> UrlCheckResult {
     let max_attempts = retries + 1;
     let mut attempt = 1;
 
     loop {
+        if let Some(rate_limiter) = &rate_limiter {
+            rate_limiter.wait().await;
+        }
         if delay_ms > 0 {
             sleep(Duration::from_millis(delay_ms)).await;
         }
@@ -67,6 +89,31 @@ async fn check_url_with_retries(
         let backoff = RETRY_BACKOFF_MS * attempt as u64;
         sleep(Duration::from_millis(backoff)).await;
         attempt += 1;
+    }
+}
+
+struct RateLimiter {
+    min_interval: Duration,
+    next_allowed: Mutex<Instant>,
+}
+
+impl RateLimiter {
+    fn new(rate_per_second: u64) -> Self {
+        let min_interval = Duration::from_secs_f64(1.0 / rate_per_second as f64);
+        Self {
+            min_interval,
+            next_allowed: Mutex::new(Instant::now()),
+        }
+    }
+
+    async fn wait(&self) {
+        let mut next_allowed = self.next_allowed.lock().await;
+        let now = Instant::now();
+        if *next_allowed > now {
+            sleep(*next_allowed - now).await;
+        }
+        let base = Instant::now().max(*next_allowed);
+        *next_allowed = base + self.min_interval;
     }
 }
 
@@ -188,6 +235,12 @@ mod tests {
             meta_description: None,
             canonical_url: None,
         }
+    }
+
+    #[test]
+    fn rate_limiter_has_expected_interval() {
+        let limiter = RateLimiter::new(2);
+        assert!(limiter.min_interval >= Duration::from_millis(500));
     }
 
     #[test]

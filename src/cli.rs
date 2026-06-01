@@ -35,6 +35,10 @@ pub struct CheckArgs {
     #[arg(long, default_value_t = 0)]
     pub delay_ms: u64,
 
+    /// Maximum URL check request starts per second across the run
+    #[arg(long)]
+    pub rate_limit_per_second: Option<u64>,
+
     /// Request timeout in seconds
     #[arg(long, default_value_t = 10)]
     pub timeout: u64,

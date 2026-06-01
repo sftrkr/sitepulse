@@ -47,10 +47,16 @@ async fn main() -> Result<()> {
                     anyhow::bail!("--agent-ready-fail-under must be between 0 and 100");
                 }
             }
+            if matches!(args.rate_limit_per_second, Some(0)) {
+                anyhow::bail!("--rate-limit-per-second must be greater than 0");
+            }
 
             println!("Checking sitemap: {}", args.sitemap_url);
             println!("Concurrency: {}", args.concurrency);
             println!("Delay: {}ms", args.delay_ms);
+            if let Some(rate_limit) = args.rate_limit_per_second {
+                println!("Rate limit: {rate_limit} req/s");
+            }
             let method = match args.method {
                 HttpMethodArg::Get => RequestMethod::Get,
                 HttpMethodArg::Head => RequestMethod::Head,
@@ -113,6 +119,7 @@ async fn main() -> Result<()> {
                     analyze_meta: args.analyze_meta,
                     user_agent: &args.user_agent,
                     delay_ms: args.delay_ms,
+                    rate_limit_per_second: args.rate_limit_per_second,
                 },
             )
             .await;
