@@ -104,7 +104,8 @@ Options:
 | `--export-json <FILE>` | Write results to a JSON file | None |
 | `--export-html <FILE>` | Write an HTML report | None |
 | `--fail-on-errors` | Exit with code `2` if any `4xx`, `5xx`, timeout, or network error is found | Disabled |
-| `--retries <N>` | Retry failed requests and `5xx` responses | `0` |
+| `--retries <N>` | Retry failed URL checks and `5xx` responses | `0` |
+| `--sitemap-retries <N>` | Retry sitemap downloads before failing | `2` |
 | `--max-urls <N>` | Limit how many discovered URLs are checked | None |
 | `--same-host-only` | Only check URLs whose host matches the sitemap URL host | Disabled |
 | `--respect-robots` | Filter out URLs disallowed by robots.txt | Disabled |
@@ -185,6 +186,7 @@ Timeout: 10s
 Method: HEAD
 Analyze meta: yes
 Retries: 2
+Sitemap retries: 2
 
 Discovered URLs: 1240
 
@@ -293,6 +295,7 @@ Completed:
 - [x] Timeout
 - [x] `--only-errors`
 - [x] Retry support
+- [x] Sitemap download retry support
 - [x] GET/HEAD check method selection
 - [x] Optional title, meta description, and canonical URL extraction
 - [x] Same-host filtering option

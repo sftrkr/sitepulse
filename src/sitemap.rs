@@ -5,12 +5,22 @@ use reqwest::Client;
 use std::collections::BTreeSet;
 use std::io::Read;
 use std::time::Duration;
+use tokio::time::sleep;
 
 const USER_AGENT: &str = "sitepulse/0.1 (+https://example.local)";
 const MAX_DEPTH: usize = 2;
 const MAX_SITEMAP_BYTES: u64 = 50 * 1024 * 1024;
+const SITEMAP_RETRY_BACKOFF_MS: u64 = 500;
 
 pub async fn discover_urls(sitemap_url: &str, timeout_secs: u64) -> Result<Vec<String>> {
+    discover_urls_with_retries(sitemap_url, timeout_secs, 0).await
+}
+
+pub async fn discover_urls_with_retries(
+    sitemap_url: &str,
+    timeout_secs: u64,
+    sitemap_retries: usize,
+) -> Result<Vec<String>> {
     let client = Client::builder()
         .user_agent(USER_AGENT)
         .timeout(Duration::from_secs(timeout_secs))
@@ -19,7 +29,15 @@ pub async fn discover_urls(sitemap_url: &str, timeout_secs: u64) -> Result<Vec<S
 
     let mut seen_sitemaps = BTreeSet::new();
     let mut urls = BTreeSet::new();
-    fetch_sitemap_recursive(&client, sitemap_url, 0, &mut seen_sitemaps, &mut urls).await?;
+    fetch_sitemap_recursive(
+        &client,
+        sitemap_url,
+        0,
+        &mut seen_sitemaps,
+        &mut urls,
+        sitemap_retries,
+    )
+    .await?;
     Ok(urls.into_iter().collect())
 }
 
@@ -29,12 +47,13 @@ async fn fetch_sitemap_recursive(
     depth: usize,
     seen_sitemaps: &mut BTreeSet<String>,
     urls: &mut BTreeSet<String>,
+    sitemap_retries: usize,
 ) -> Result<()> {
     if depth >= MAX_DEPTH || !seen_sitemaps.insert(sitemap_url.to_string()) {
         return Ok(());
     }
 
-    let xml = download_xml(client, sitemap_url).await?;
+    let xml = download_xml_with_retries(client, sitemap_url, sitemap_retries).await?;
     let parsed = parse_sitemap_locs(&xml)
         .with_context(|| format!("failed to parse XML from sitemap: {sitemap_url}"))?;
 
@@ -46,6 +65,7 @@ async fn fetch_sitemap_recursive(
                 depth + 1,
                 seen_sitemaps,
                 urls,
+                sitemap_retries,
             ))
             .await?;
         }
@@ -54,6 +74,24 @@ async fn fetch_sitemap_recursive(
     }
 
     Ok(())
+}
+
+async fn download_xml_with_retries(client: &Client, url: &str, retries: usize) -> Result<String> {
+    let max_attempts = retries + 1;
+    let mut attempt = 1;
+
+    loop {
+        match download_xml(client, url).await {
+            Ok(xml) => return Ok(xml),
+            Err(error) if attempt < max_attempts => {
+                let backoff = SITEMAP_RETRY_BACKOFF_MS * attempt as u64;
+                sleep(Duration::from_millis(backoff)).await;
+                attempt += 1;
+                let _ = error;
+            }
+            Err(error) => return Err(error),
+        }
+    }
 }
 
 async fn download_xml(client: &Client, url: &str) -> Result<String> {

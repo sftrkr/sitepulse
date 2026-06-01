@@ -55,9 +55,13 @@ pub struct CheckArgs {
     #[arg(long)]
     pub export_html: Option<PathBuf>,
 
-    /// Retry failed requests and 5xx responses this many times
+    /// Retry failed URL checks and 5xx responses this many times
     #[arg(long, default_value_t = 0)]
     pub retries: usize,
+
+    /// Retry sitemap downloads this many times
+    #[arg(long, default_value_t = 2)]
+    pub sitemap_retries: usize,
 
     /// Limit the number of discovered URLs to check
     #[arg(long)]

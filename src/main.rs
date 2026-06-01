@@ -20,7 +20,7 @@ use export::{export_csv, export_html, export_json};
 use models::RequestMethod;
 use report::{print_results, print_summary, summarize};
 use robots::{fetch_robots_rules, filter_allowed_by_robots};
-use sitemap::discover_urls;
+use sitemap::discover_urls_with_retries;
 use url::Url;
 
 #[tokio::main]
@@ -55,9 +55,12 @@ async fn main() -> Result<()> {
                 if args.analyze_meta { "yes" } else { "no" }
             );
             println!("Retries: {}", args.retries);
+            println!("Sitemap retries: {}", args.sitemap_retries);
             println!();
 
-            let mut urls = discover_urls(&args.sitemap_url, args.timeout).await?;
+            let mut urls =
+                discover_urls_with_retries(&args.sitemap_url, args.timeout, args.sitemap_retries)
+                    .await?;
             let discovered_count = urls.len();
 
             if args.same_host_only {
