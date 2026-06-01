@@ -39,6 +39,10 @@ pub struct CheckArgs {
     #[arg(long)]
     pub export: Option<PathBuf>,
 
+    /// Export full result table as JSON
+    #[arg(long)]
+    pub export_json: Option<PathBuf>,
+
     /// Retry failed requests and 5xx responses this many times
     #[arg(long, default_value_t = 0)]
     pub retries: usize,
@@ -46,4 +50,8 @@ pub struct CheckArgs {
     /// Limit the number of discovered URLs to check
     #[arg(long)]
     pub max_urls: Option<usize>,
+
+    /// Exit with a non-zero status code if any error is found
+    #[arg(long)]
+    pub fail_on_errors: bool,
 }

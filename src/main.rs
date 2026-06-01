@@ -9,7 +9,7 @@ use anyhow::Result;
 use checker::check_urls;
 use clap::Parser;
 use cli::{Cli, Commands};
-use export::export_csv;
+use export::{export_csv, export_json};
 use report::{print_results, print_summary, summarize};
 use sitemap::discover_urls;
 
@@ -51,8 +51,17 @@ async fn main() -> Result<()> {
                 println!("\nCSV report written to: {}", path.display());
             }
 
+            if let Some(path) = args.export_json.as_deref() {
+                export_json(path, &results)?;
+                println!("\nJSON report written to: {}", path.display());
+            }
+
             let summary = summarize(&results);
             print_summary(&summary);
+
+            if args.fail_on_errors && summary.has_errors() {
+                std::process::exit(2);
+            }
         }
     }
 

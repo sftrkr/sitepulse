@@ -26,6 +26,8 @@ Current features:
 - Retry support for network errors and `5xx` responses
 - Maximum URL limit option
 - CSV export
+- JSON export
+- CI-friendly non-zero exit option
 - Summary report
 - Top 10 slowest URLs
 - Custom User-Agent
@@ -87,6 +89,8 @@ Options:
 | `--timeout <SECONDS>` | Request timeout in seconds | `10` |
 | `--only-errors` | Show only network errors and `4xx`/`5xx` responses | Disabled |
 | `--export <FILE>` | Write results to a CSV file | None |
+| `--export-json <FILE>` | Write results to a JSON file | None |
+| `--fail-on-errors` | Exit with code `2` if any `4xx`, `5xx`, timeout, or network error is found | Disabled |
 | `--retries <N>` | Retry failed requests and `5xx` responses | `0` |
 | `--max-urls <N>` | Limit how many discovered URLs are checked | None |
 
@@ -159,7 +163,7 @@ Slowest URLs:
 2. 2910ms https://example.com/product/example
 ```
 
-## CSV export
+## Export
 
 Export to CSV:
 
@@ -167,7 +171,13 @@ Export to CSV:
 cargo run -- check https://example.com/sitemap.xml --export report.csv
 ```
 
-CSV fields:
+Export to JSON:
+
+```bash
+cargo run -- check https://example.com/sitemap.xml --export-json report.json
+```
+
+CSV and JSON fields:
 
 - `url`
 - `status`
@@ -229,6 +239,8 @@ Completed:
 - [x] Retry support
 - [x] Maximum URL limit option
 - [x] CSV export
+- [x] JSON export
+- [x] CI-friendly `--fail-on-errors` option
 - [x] Sitemap index support
 - [x] Slow URL list
 - [x] README
@@ -236,7 +248,6 @@ Completed:
 Potential next improvements:
 
 - [ ] More readable table output
-- [ ] JSON export
 - [ ] HTML report output
 - [ ] Robots.txt checks
 - [ ] Canonical URL checks

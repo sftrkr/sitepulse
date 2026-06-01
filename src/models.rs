@@ -28,3 +28,9 @@ pub struct Summary {
     pub average_time_ms: u128,
     pub slowest: Vec<UrlCheckResult>,
 }
+
+impl Summary {
+    pub fn has_errors(&self) -> bool {
+        self.client_4xx > 0 || self.server_5xx > 0 || self.errors > 0
+    }
+}

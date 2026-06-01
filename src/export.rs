@@ -13,3 +13,11 @@ pub fn export_csv(path: &Path, results: &[UrlCheckResult]) -> Result<()> {
     writer.flush()?;
     Ok(())
 }
+
+pub fn export_json(path: &Path, results: &[UrlCheckResult]) -> Result<()> {
+    let file = std::fs::File::create(path)
+        .with_context(|| format!("failed to create JSON file: {}", path.display()))?;
+    serde_json::to_writer_pretty(file, results)
+        .with_context(|| format!("failed to write JSON file: {}", path.display()))?;
+    Ok(())
+}
