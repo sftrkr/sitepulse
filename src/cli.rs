@@ -83,6 +83,10 @@ pub struct CheckArgs {
     #[arg(long)]
     pub agent_ready_export_html: Option<PathBuf>,
 
+    /// Exit with code 3 if the agent readiness score percentage is below this value
+    #[arg(long)]
+    pub agent_ready_fail_under: Option<u8>,
+
     /// Exit with a non-zero status code if any error is found
     #[arg(long)]
     pub fail_on_errors: bool,

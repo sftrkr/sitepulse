@@ -217,10 +217,23 @@ pub async fn audit_agent_readiness(
     })
 }
 
+pub fn score_percent(report: &AgentReadinessReport) -> u8 {
+    if report.max_score == 0 {
+        0
+    } else {
+        ((report.score as f32 / report.max_score as f32) * 100.0).round() as u8
+    }
+}
+
 pub fn print_agent_readiness_report(report: &AgentReadinessReport) {
     println!("\nAgent Readiness:");
     println!("Site: {}", report.site_url);
-    println!("Score: {}/{}\n", report.score, report.max_score);
+    println!(
+        "Score: {}/{} ({}%)\n",
+        report.score,
+        report.max_score,
+        score_percent(report)
+    );
     for c in &report.checks {
         println!(
             "{:<4} {:<20} {} ({}/{})",
@@ -1023,6 +1036,17 @@ fn escape_html(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn calculates_score_percent() {
+        let report = AgentReadinessReport {
+            site_url: "https://example.com/".to_string(),
+            score: 7,
+            max_score: 10,
+            checks: Vec::new(),
+        };
+        assert_eq!(score_percent(&report), 70);
+    }
+
     #[test]
     fn builds_site_root_url() {
         assert_eq!(

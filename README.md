@@ -30,6 +30,7 @@ Current features:
 - Same-host filtering option
 - Optional robots.txt filtering
 - Initial agent readiness audit (`--agent-ready`)
+- CI-friendly agent readiness score threshold
 - Maximum URL limit option
 - CSV export
 - JSON export
@@ -108,6 +109,7 @@ Options:
 | `--agent-ready` | Run an agent readiness audit for the sitemap host | Disabled |
 | `--agent-ready-export-json <FILE>` | Write agent readiness results to a JSON file | None |
 | `--agent-ready-export-html <FILE>` | Write agent readiness results to an HTML file | None |
+| `--agent-ready-fail-under <PERCENT>` | Exit with code `3` if agent readiness score is below the threshold | None |
 
 Examples:
 
@@ -294,6 +296,7 @@ Completed:
 - [x] Same-host filtering option
 - [x] Optional robots.txt filtering
 - [x] Initial agent readiness audit (`--agent-ready`)
+- [x] CI-friendly agent readiness score threshold
 - [x] Maximum URL limit option
 - [x] CSV export
 - [x] JSON export
@@ -331,16 +334,16 @@ Potential next improvements:
     - [x] Check OAuth discovery
     - [x] Check OAuth Protected Resource metadata
     - [x] Check `auth.md`
-  - [ ] Page intelligence signals
+  - [x] Page intelligence signals
     - [x] Analyze homepage title, meta description, canonical URL, and OpenGraph metadata
     - [x] Detect JSON-LD structured data
     - [x] Report semantic HTML signals such as `<main>` and `<h1>`
-  - [ ] Commerce readiness
+  - [x] Commerce readiness
     - [x] Check x402
     - [x] Check MPP
     - [x] Check UCP
     - [x] Check ACP
-  - [ ] Scoring/reporting
+  - [x] Scoring/reporting
     - [x] Provide an agent readiness score
     - [x] Provide PASS/WARN/FAIL checklist
     - [x] Add JSON/HTML export support for agent readiness results

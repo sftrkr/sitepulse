@@ -10,7 +10,7 @@ mod sitemap;
 
 use agent::{
     audit_agent_readiness, export_agent_readiness_html, export_agent_readiness_json,
-    print_agent_readiness_report,
+    print_agent_readiness_report, score_percent,
 };
 use anyhow::Result;
 use checker::check_urls;
