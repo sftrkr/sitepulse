@@ -24,6 +24,7 @@ pub struct CheckConfig {
     pub retries: Option<usize>,
     pub sitemap_retries: Option<usize>,
     pub max_urls: Option<usize>,
+    pub dry_run: Option<bool>,
     pub same_host_only: Option<bool>,
     pub respect_robots: Option<bool>,
     pub agent_ready: Option<bool>,
@@ -108,6 +109,9 @@ pub fn apply_check_config(args: &mut CheckArgs, config: CheckConfig) {
     if let Some(value) = config.max_urls {
         args.max_urls = Some(value);
     }
+    if let Some(value) = config.dry_run {
+        args.dry_run = value;
+    }
     if let Some(value) = config.same_host_only {
         args.same_host_only = value;
     }
@@ -151,6 +155,7 @@ mod tests {
                 per_host_rate_limit_per_second: Some(3),
                 method: Some(HttpMethodConfig::Head),
                 summary_only: Some(true),
+                dry_run: Some(true),
                 agent_ready: Some(true),
                 ..CheckConfig::default()
             },
@@ -162,6 +167,7 @@ mod tests {
         assert_eq!(args.per_host_rate_limit_per_second, Some(3));
         assert!(matches!(args.method, HttpMethodArg::Head));
         assert!(args.summary_only);
+        assert!(args.dry_run);
         assert!(args.agent_ready);
     }
 }

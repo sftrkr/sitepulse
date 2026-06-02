@@ -103,6 +103,10 @@ pub struct CheckArgs {
     #[arg(long)]
     pub max_urls: Option<usize>,
 
+    /// Discover and filter URLs without running HTTP checks
+    #[arg(long)]
+    pub dry_run: bool,
+
     /// Only check URLs whose host matches the sitemap URL host
     #[arg(long)]
     pub same_host_only: bool,

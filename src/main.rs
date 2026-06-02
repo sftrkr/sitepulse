@@ -119,6 +119,10 @@ async fn main() -> Result<()> {
             if urls.len() != filtered_count {
                 println!("Checking URLs: {}", urls.len());
             }
+            if args.dry_run {
+                println!("Dry run: no URL checks were performed.");
+                return Ok(());
+            }
             println!();
 
             let results = check_urls(

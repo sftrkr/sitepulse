@@ -37,6 +37,7 @@ Current features:
 - Initial agent readiness audit (`--agent-ready`)
 - CI-friendly agent readiness score threshold
 - Maximum URL limit option
+- Dry-run discovery mode
 - CSV export
 - JSON export
 - HTML report export
@@ -116,6 +117,7 @@ Options:
 | `--retries <N>` | Retry failed URL checks and `5xx` responses | `0` |
 | `--sitemap-retries <N>` | Retry sitemap downloads before failing | `2` |
 | `--max-urls <N>` | Limit how many discovered URLs are checked | None |
+| `--dry-run` | Discover and filter URLs without running HTTP checks | Disabled |
 | `--same-host-only` | Only check URLs whose host matches the sitemap URL host | Disabled |
 | `--respect-robots` | Filter out URLs disallowed by robots.txt | Disabled |
 | `--agent-ready` | Run an agent readiness audit for the sitemap host | Disabled |
@@ -351,6 +353,7 @@ Completed:
 - [x] Initial agent readiness audit (`--agent-ready`)
 - [x] CI-friendly agent readiness score threshold
 - [x] Maximum URL limit option
+- [x] Dry-run discovery mode
 - [x] CSV export
 - [x] JSON export
 - [x] HTML report export
@@ -381,11 +384,11 @@ Completed:
 - [x] Add Homebrew tap formula draft
 - [x] Add `v0.1.0` release notes draft
 - [x] Add advanced per-host rate window controls
+- [x] Publish GitHub release notes and binaries for `v0.1.0`
+- [x] Publish prebuilt release binaries
 
 Potential next improvements:
 
-- [x] Publish GitHub release notes and binaries for `v0.1.0`
-- [x] Publish prebuilt release binaries
 
 ## Notes
 
