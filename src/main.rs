@@ -53,6 +53,9 @@ async fn main() -> Result<()> {
             if matches!(args.per_host_concurrency, Some(0)) {
                 anyhow::bail!("--per-host-concurrency must be greater than 0");
             }
+            if matches!(args.per_host_rate_limit_per_second, Some(0)) {
+                anyhow::bail!("--per-host-rate-limit-per-second must be greater than 0");
+            }
 
             println!("Checking sitemap: {}", args.sitemap_url);
             println!("Concurrency: {}", args.concurrency);
@@ -62,6 +65,9 @@ async fn main() -> Result<()> {
             }
             if let Some(per_host_concurrency) = args.per_host_concurrency {
                 println!("Per-host concurrency: {per_host_concurrency}");
+            }
+            if let Some(per_host_rate_limit) = args.per_host_rate_limit_per_second {
+                println!("Per-host rate limit: {per_host_rate_limit} req/s");
             }
             let method = match args.method {
                 HttpMethodArg::Get => RequestMethod::Get,
@@ -127,6 +133,7 @@ async fn main() -> Result<()> {
                     delay_ms: args.delay_ms,
                     rate_limit_per_second: args.rate_limit_per_second,
                     per_host_concurrency: args.per_host_concurrency,
+                    per_host_rate_limit_per_second: args.per_host_rate_limit_per_second,
                 },
             )
             .await;

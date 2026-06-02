@@ -24,6 +24,7 @@ pub struct CheckOptions<'a> {
     pub delay_ms: u64,
     pub rate_limit_per_second: Option<u64>,
     pub per_host_concurrency: Option<usize>,
+    pub per_host_rate_limit_per_second: Option<u64>,
 }
 
 pub async fn check_urls(urls: &[String], options: CheckOptions<'_>) -> Vec<UrlCheckResult> {
@@ -39,6 +40,7 @@ pub async fn check_urls(urls: &[String], options: CheckOptions<'_>) -> Vec<UrlCh
         .map(RateLimiter::new)
         .map(Arc::new);
     let host_limiters = build_host_limiters(urls, options.per_host_concurrency);
+    let host_rate_limiters = build_host_rate_limiters(urls, options.per_host_rate_limit_per_second);
 
     stream::iter(urls.iter().cloned())
         .map(|url| {
@@ -49,6 +51,7 @@ pub async fn check_urls(urls: &[String], options: CheckOptions<'_>) -> Vec<UrlCh
             let delay_ms = options.delay_ms;
             let rate_limiter = rate_limiter.clone();
             let host_limiter = host_limiter_for_url(&host_limiters, &url);
+            let host_rate_limiter = host_rate_limiter_for_url(&host_rate_limiters, &url);
             async move {
                 check_url_with_retries(
                     &client,
@@ -60,6 +63,7 @@ pub async fn check_urls(urls: &[String], options: CheckOptions<'_>) -> Vec<UrlCh
                         delay_ms,
                         rate_limiter,
                         host_limiter,
+                        host_rate_limiter,
                     },
                 )
                 .await
@@ -78,6 +82,7 @@ struct UrlAttemptOptions {
     delay_ms: u64,
     rate_limiter: Option<Arc<RateLimiter>>,
     host_limiter: Option<Arc<Semaphore>>,
+    host_rate_limiter: Option<Arc<RateLimiter>>,
 }
 
 async fn check_url_with_retries(
@@ -91,6 +96,9 @@ async fn check_url_with_retries(
     loop {
         if let Some(rate_limiter) = &options.rate_limiter {
             rate_limiter.wait().await;
+        }
+        if let Some(host_rate_limiter) = &options.host_rate_limiter {
+            host_rate_limiter.wait().await;
         }
         if options.delay_ms > 0 {
             sleep(Duration::from_millis(options.delay_ms)).await;
@@ -131,6 +139,30 @@ fn build_host_limiters(
         }
     }
     Some(Arc::new(limiters))
+}
+
+fn build_host_rate_limiters(
+    urls: &[String],
+    per_host_rate_limit_per_second: Option<u64>,
+) -> Option<Arc<HashMap<String, Arc<RateLimiter>>>> {
+    let limit = per_host_rate_limit_per_second.filter(|limit| *limit > 0)?;
+    let mut limiters = HashMap::new();
+    for url in urls {
+        if let Some(host) = host_key(url) {
+            limiters
+                .entry(host)
+                .or_insert_with(|| Arc::new(RateLimiter::new(limit)));
+        }
+    }
+    Some(Arc::new(limiters))
+}
+
+fn host_rate_limiter_for_url(
+    limiters: &Option<Arc<HashMap<String, Arc<RateLimiter>>>>,
+    url: &str,
+) -> Option<Arc<RateLimiter>> {
+    let host = host_key(url)?;
+    limiters.as_ref()?.get(&host).cloned()
 }
 
 fn host_limiter_for_url(
@@ -302,6 +334,17 @@ mod tests {
         let limiters = build_host_limiters(&urls, Some(2)).unwrap();
         assert_eq!(limiters.len(), 2);
         assert!(limiters.contains_key("example.com"));
+    }
+
+    #[test]
+    fn builds_host_rate_limiters() {
+        let urls = vec![
+            "https://example.com/a".to_string(),
+            "https://example.org/a".to_string(),
+        ];
+        let limiters = build_host_rate_limiters(&urls, Some(3)).unwrap();
+        assert_eq!(limiters.len(), 2);
+        assert!(limiters.contains_key("example.org"));
     }
 
     #[test]
