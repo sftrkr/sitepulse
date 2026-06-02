@@ -436,3 +436,7 @@ Recommended commit prefixes:
 - ci: for CI changes
 
 When the release PR is merged, release-plz can create the Git tag and GitHub Release. The existing Release workflow then builds and uploads prebuilt binaries for that tag.
+
+## Additional documentation
+
+- [CI guide](docs/ci.md)
