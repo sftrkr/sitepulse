@@ -419,6 +419,7 @@ Please see [CHANGELOG.md](CHANGELOG.md) for release history.
 ## Additional documentation
 
 - [Export formats](docs/exports.md)
+- [Agent readiness audit](docs/agent-readiness.md)
 
 ## Versioning automation
 
