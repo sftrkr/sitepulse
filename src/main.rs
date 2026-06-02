@@ -137,7 +137,9 @@ async fn main() -> Result<()> {
                 },
             )
             .await;
-            print_results(&results, args.only_errors);
+            if !args.summary_only {
+                print_results(&results, args.only_errors);
+            }
 
             if let Some(path) = args.export.as_deref() {
                 export_csv(path, &results)?;

@@ -28,6 +28,7 @@ Current features:
 - Concurrency support
 - Per-request delay support for politeness/rate limiting
 - Option to show only errors
+- Summary-only output option
 - Retry support for network errors and `5xx` responses
 - GET/HEAD check method selection
 - Optional title, meta description, and canonical URL extraction
@@ -105,6 +106,7 @@ Options:
 | `--method <METHOD>` | HTTP method for URL checks: `get` or `head` | `get` |
 | `--analyze-meta` | Extract page title, meta description, and canonical URL. Uses GET even with `--method=head` | Disabled |
 | `--only-errors` | Show only network errors and `4xx`/`5xx` responses | Disabled |
+| `--summary-only` | Print only the summary, without the per-URL result table | Disabled |
 | `--export <FILE>` | Write results to a CSV file | None |
 | `--export-json <FILE>` | Write results to a JSON file | None |
 | `--export-html <FILE>` | Write an HTML report | None |
@@ -339,6 +341,7 @@ Completed:
 - [x] Timeout
 - [x] Custom User-Agent support
 - [x] `--only-errors`
+- [x] `--summary-only`
 - [x] Retry support
 - [x] Sitemap download retry support
 - [x] GET/HEAD check method selection

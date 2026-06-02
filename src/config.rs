@@ -15,6 +15,7 @@ pub struct CheckConfig {
     pub method: Option<HttpMethodConfig>,
     pub analyze_meta: Option<bool>,
     pub only_errors: Option<bool>,
+    pub summary_only: Option<bool>,
     pub export: Option<PathBuf>,
     pub export_json: Option<PathBuf>,
     pub export_html: Option<PathBuf>,
@@ -79,6 +80,9 @@ pub fn apply_check_config(args: &mut CheckArgs, config: CheckConfig) {
     }
     if let Some(value) = config.only_errors {
         args.only_errors = value;
+    }
+    if let Some(value) = config.summary_only {
+        args.summary_only = value;
     }
     if let Some(value) = config.export {
         args.export = Some(value);
@@ -146,6 +150,7 @@ mod tests {
                 per_host_concurrency: Some(1),
                 per_host_rate_limit_per_second: Some(3),
                 method: Some(HttpMethodConfig::Head),
+                summary_only: Some(true),
                 agent_ready: Some(true),
                 ..CheckConfig::default()
             },
@@ -156,6 +161,7 @@ mod tests {
         assert_eq!(args.per_host_concurrency, Some(1));
         assert_eq!(args.per_host_rate_limit_per_second, Some(3));
         assert!(matches!(args.method, HttpMethodArg::Head));
+        assert!(args.summary_only);
         assert!(args.agent_ready);
     }
 }

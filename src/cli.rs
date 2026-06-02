@@ -67,6 +67,10 @@ pub struct CheckArgs {
     #[arg(long)]
     pub only_errors: bool,
 
+    /// Print only the summary, without the per-URL result table
+    #[arg(long)]
+    pub summary_only: bool,
+
     /// Export full result table as CSV
     #[arg(long)]
     pub export: Option<PathBuf>,
