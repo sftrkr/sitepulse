@@ -420,6 +420,7 @@ Please see [CHANGELOG.md](CHANGELOG.md) for release history.
 
 - [Export formats](docs/exports.md)
 - [Agent readiness audit](docs/agent-readiness.md)
+- [Configuration](docs/configuration.md)
 
 ## Versioning automation
 
