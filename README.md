@@ -380,8 +380,8 @@ Completed:
 
 Potential next improvements:
 
-- [ ] Publish GitHub release notes and binaries for `v0.1.0`
-- [ ] Publish prebuilt release binaries
+- [x] Publish GitHub release notes and binaries for `v0.1.0`
+- [x] Publish prebuilt release binaries
 
 ## Notes
 
