@@ -375,12 +375,13 @@ Completed:
 - [x] Richer structured data validation for JSON-LD schema types
 - [x] Per-host concurrency controls
 - [x] Add Homebrew tap formula draft
+- [x] Add `v0.1.0` release notes draft
+- [x] Add advanced per-host rate window controls
+
 Potential next improvements:
 
-- [x] Add `v0.1.0` release notes draft
 - [ ] Publish GitHub release notes and binaries for `v0.1.0`
 - [ ] Publish prebuilt release binaries
-- [x] Add advanced per-host rate window controls
 
 ## Notes
 
@@ -394,6 +395,10 @@ Potential next improvements:
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
+
+## Contributing
+
+Please see [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, validation commands, and pull request guidelines.
 
 ## Security
 
