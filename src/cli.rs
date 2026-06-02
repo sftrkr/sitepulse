@@ -13,9 +13,26 @@ pub struct Cli {
 }
 
 #[derive(Debug, Subcommand)]
+#[allow(clippy::large_enum_variant)]
 pub enum Commands {
     /// Check all URLs discovered from a sitemap.xml URL
     Check(CheckArgs),
+
+    /// Manage sitepulse configuration files
+    #[command(subcommand)]
+    Config(ConfigCommands),
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ConfigCommands {
+    /// Validate a JSON config file
+    Validate(ConfigValidateArgs),
+}
+
+#[derive(Debug, Args)]
+pub struct ConfigValidateArgs {
+    /// JSON config file to validate
+    pub path: PathBuf,
 }
 
 #[derive(Debug, Args)]

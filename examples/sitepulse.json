@@ -1,0 +1,15 @@
+{
+  "$schema": "../schemas/sitepulse-config.schema.json",
+  "concurrency": 3,
+  "timeout": 15,
+  "sitemap_retries": 3,
+  "retries": 1,
+  "same_host_only": true,
+  "respect_robots": true,
+  "rate_limit_per_second": 1,
+  "per_host_concurrency": 1,
+  "summary_only": true,
+  "fail_on_errors": true,
+  "export_junit": "report.xml",
+  "export_sarif": "report.sarif"
+}

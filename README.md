@@ -95,6 +95,10 @@ sitepulse check https://example.com/sitemap.xml
 sitepulse check <SITEMAP_URL> [OPTIONS]
 ```
 
+```bash
+sitepulse config validate <FILE>
+```
+
 Options:
 
 | Option | Description | Default |

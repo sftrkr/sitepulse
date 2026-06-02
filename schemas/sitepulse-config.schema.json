@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "sitepulse check configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "concurrency": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "delay_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "rate_limit_per_second": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "per_host_concurrency": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "per_host_rate_limit_per_second": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "timeout": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "user_agent": {
+      "type": "string",
+      "minLength": 1
+    },
+    "method": {
+      "type": "string",
+      "enum": [
+        "get",
+        "head"
+      ]
+    },
+    "max_redirects": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "analyze_meta": {
+      "type": "boolean"
+    },
+    "only_errors": {
+      "type": "boolean"
+    },
+    "summary_only": {
+      "type": "boolean"
+    },
+    "quiet": {
+      "type": "boolean"
+    },
+    "no_color": {
+      "type": "boolean"
+    },
+    "slow_threshold_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "only_slow": {
+      "type": "boolean"
+    },
+    "dry_run": {
+      "type": "boolean"
+    },
+    "export": {
+      "type": "string"
+    },
+    "export_json": {
+      "type": "string"
+    },
+    "export_html": {
+      "type": "string"
+    },
+    "export_junit": {
+      "type": "string"
+    },
+    "export_sarif": {
+      "type": "string"
+    },
+    "retries": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "sitemap_retries": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "max_urls": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "same_host_only": {
+      "type": "boolean"
+    },
+    "respect_robots": {
+      "type": "boolean"
+    },
+    "agent_ready": {
+      "type": "boolean"
+    },
+    "agent_ready_export_json": {
+      "type": "string"
+    },
+    "agent_ready_export_html": {
+      "type": "string"
+    },
+    "agent_ready_fail_under": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "fail_on_errors": {
+      "type": "boolean"
+    }
+  }
+}

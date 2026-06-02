@@ -30,6 +30,12 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
+        Commands::Config(config_command) => match config_command {
+            cli::ConfigCommands::Validate(args) => {
+                load_check_config(&args.path)?;
+                println!("Config file is valid: {}", args.path.display());
+            }
+        },
         Commands::Check(mut args) => {
             if let Some(path) = args.config.as_deref() {
                 let config = load_check_config(path)?;

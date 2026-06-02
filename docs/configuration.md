@@ -4,6 +4,14 @@
 
 ## Usage
 
+Validate a config file before using it:
+
+```bash
+sitepulse config validate sitepulse.json
+```
+
+Run a check with a config file:
+
 ```bash
 sitepulse check https://example.com/sitemap.xml --config sitepulse.json
 ```
@@ -84,3 +92,9 @@ Command-line parsing happens first, then values from the config file are applied
 - JSON field names use snake_case.
 - Keep site-specific values such as the sitemap URL on the command line.
 - Use conservative politeness settings for production sites.
+
+## JSON schema
+
+A JSON Schema is available at [`schemas/sitepulse-config.schema.json`](../schemas/sitepulse-config.schema.json). Editors that support JSON Schema can use it for autocomplete and validation.
+
+Example config: [`examples/sitepulse.json`](../examples/sitepulse.json).

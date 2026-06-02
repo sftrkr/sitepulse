@@ -144,7 +144,9 @@ mod tests {
     fn applies_config_values_to_check_args() {
         let mut cli =
             crate::cli::Cli::parse_from(["sitepulse", "check", "https://example.com/sitemap.xml"]);
-        let crate::cli::Commands::Check(ref mut args) = cli.command;
+        let crate::cli::Commands::Check(ref mut args) = cli.command else {
+            panic!("expected check command");
+        };
         apply_check_config(
             args,
             CheckConfig {
