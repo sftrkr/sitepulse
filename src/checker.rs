@@ -53,12 +53,14 @@ pub async fn check_urls(urls: &[String], options: CheckOptions<'_>) -> Vec<UrlCh
                 check_url_with_retries(
                     &client,
                     url,
-                    retries,
-                    method,
-                    analyze_meta,
-                    delay_ms,
-                    rate_limiter,
-                    host_limiter,
+                    UrlAttemptOptions {
+                        retries,
+                        method,
+                        analyze_meta,
+                        delay_ms,
+                        rate_limiter,
+                        host_limiter,
+                    },
                 )
                 .await
             }
@@ -68,31 +70,43 @@ pub async fn check_urls(urls: &[String], options: CheckOptions<'_>) -> Vec<UrlCh
         .await
 }
 
-async fn check_url_with_retries(
-    client: &Client,
-    url: String,
+#[derive(Clone)]
+struct UrlAttemptOptions {
     retries: usize,
     method: RequestMethod,
     analyze_meta: bool,
     delay_ms: u64,
     rate_limiter: Option<Arc<RateLimiter>>,
     host_limiter: Option<Arc<Semaphore>>,
+}
+
+async fn check_url_with_retries(
+    client: &Client,
+    url: String,
+    options: UrlAttemptOptions,
 ) -> UrlCheckResult {
-    let max_attempts = retries + 1;
+    let max_attempts = options.retries + 1;
     let mut attempt = 1;
 
     loop {
-        if let Some(rate_limiter) = &rate_limiter {
+        if let Some(rate_limiter) = &options.rate_limiter {
             rate_limiter.wait().await;
         }
-        if delay_ms > 0 {
-            sleep(Duration::from_millis(delay_ms)).await;
+        if options.delay_ms > 0 {
+            sleep(Duration::from_millis(options.delay_ms)).await;
         }
-        let _host_permit = match &host_limiter {
+        let _host_permit = match &options.host_limiter {
             Some(limiter) => limiter.acquire().await.ok(),
             None => None,
         };
-        let result = check_url_once(client, url.clone(), attempt, &method, analyze_meta).await;
+        let result = check_url_once(
+            client,
+            url.clone(),
+            attempt,
+            &options.method,
+            options.analyze_meta,
+        )
+        .await;
         if attempt >= max_attempts || !should_retry(&result) {
             return result;
         }
