@@ -416,6 +416,10 @@ Please see [SECURITY.md](SECURITY.md) for vulnerability reporting guidelines.
 
 Please see [CHANGELOG.md](CHANGELOG.md) for release history.
 
+## Additional documentation
+
+- [Export formats](docs/exports.md)
+
 ## Versioning automation
 
 Versioning is automated with release-plz: https://release-plz.ieni.dev/. On pushes to main, the Release PR workflow analyzes conventional commits, updates Cargo.toml and CHANGELOG.md, and opens or updates a release pull request.
