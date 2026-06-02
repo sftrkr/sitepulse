@@ -377,6 +377,7 @@ Completed:
 - [x] Add Homebrew tap formula draft
 Potential next improvements:
 
+- [x] Add `v0.1.0` release notes draft
 - [ ] Publish GitHub release notes and binaries for `v0.1.0`
 - [ ] Publish prebuilt release binaries
 - [ ] Add advanced per-host rate window controls
