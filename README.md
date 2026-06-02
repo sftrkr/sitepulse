@@ -368,6 +368,7 @@ Completed:
   - [x] Scoring/reporting: score, PASS/WARN/FAIL checklist, JSON/HTML exports
 
 - [x] Add GitHub release workflow for tagged binary releases
+- [x] Automated versioning with release-plz
 - [x] Add configuration file support for repeated audits
 - [x] Add basic per-request politeness delay
 - [x] Add JUnit and SARIF CI exports
@@ -408,3 +409,18 @@ Please see [SECURITY.md](SECURITY.md) for vulnerability reporting guidelines.
 ## Changelog
 
 Please see [CHANGELOG.md](CHANGELOG.md) for release history.
+
+## Versioning automation
+
+Versioning is automated with release-plz: https://release-plz.ieni.dev/. On pushes to main, the Release PR workflow analyzes conventional commits, updates Cargo.toml and CHANGELOG.md, and opens or updates a release pull request.
+
+Recommended commit prefixes:
+
+- feat: for new features
+- fix: for bug fixes
+- perf: for performance improvements
+- docs: for documentation-only changes
+- refactor: for internal changes
+- ci: for CI changes
+
+When the release PR is merged, release-plz can create the Git tag and GitHub Release. The existing Release workflow then builds and uploads prebuilt binaries for that tag.

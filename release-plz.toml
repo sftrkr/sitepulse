@@ -1,0 +1,14 @@
+[workspace]
+changelog_update = true
+changelog_path = "CHANGELOG.md"
+git_release_enable = true
+git_tag_enable = true
+pr_name = "chore: release {{ version }}"
+pr_labels = ["release"]
+release_commits = "^feat|^fix|^perf|^revert|^docs|^refactor|^chore|^test|^ci"
+
+[[package]]
+name = "sitepulse"
+changelog_update = true
+git_release_enable = true
+git_tag_enable = true
