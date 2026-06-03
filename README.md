@@ -445,3 +445,4 @@ When the release PR is merged, release-plz can create the Git tag and GitHub Rel
 
 - [CI guide](docs/ci.md)
 - [Release process](docs/release.md)
+- [WordPress and WooCommerce guide](docs/wordpress-woocommerce.md)
