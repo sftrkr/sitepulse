@@ -90,6 +90,7 @@ Command-line parsing happens first, then values from the config file are applied
 ## Notes
 
 - JSON field names use snake_case.
+- Unknown fields are rejected; use the schema to catch typos early.
 - Keep site-specific values such as the sitemap URL on the command line.
 - Use conservative politeness settings for production sites.
 

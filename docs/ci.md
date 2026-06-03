@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install sitepulse
-        run: cargo install --git https://github.com/sftrkr/sitepulse.git --tag v0.1.0
+        run: cargo install --git https://github.com/sftrkr/sitepulse.git --tag v0.2.0
 
       - name: Check sitemap
         run: |

@@ -55,3 +55,29 @@ Validates a `sitepulse` JSON config file.
 - MCP tool outputs are JSON strings so AI clients can parse them reliably.
 - For large sites, use conservative `max_urls`, `concurrency`, `rate_limit_per_second`, and `per_host_concurrency` values.
 - The MCP server reuses the same core logic as the CLI.
+
+## JSON-RPC smoke test
+
+List available tools:
+
+```bash
+printf '{"jsonrpc":"2.0","id":1,"method":"tools/list"}
+' | sitepulse mcp
+```
+
+Call `agent_ready`:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "agent_ready",
+    "arguments": {
+      "site_url": "https://example.com",
+      "timeout": 15
+    }
+  }
+}
+```
