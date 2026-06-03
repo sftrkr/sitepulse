@@ -1,8 +1,10 @@
 # sitepulse
 
-`sitepulse` is a Rust-based CLI tool for technical SEO, sitemap health checks, and AI agent readiness audits.
+`sitepulse` is a Rust-based CLI and MCP-enabled site intelligence tool for technical SEO, sitemap health checks, and AI agent readiness audits.
 
-It discovers URLs from a `sitemap.xml`, checks each page's HTTP status, response time, redirect state, final URL, and optional metadata, then produces terminal, CSV, JSON, and HTML reports. It also includes an `--agent-ready` audit inspired by emerging agent-web standards such as `llms.txt`, AI crawler rules, discovery headers, protocol discovery, structured data, DNS-AID, and agentic commerce signals.
+It discovers URLs from a `sitemap.xml`, checks each page's HTTP status, response time, redirect state, final URL, and optional metadata, then produces terminal, CSV, JSON, HTML, JUnit, and SARIF reports. It also includes an `--agent-ready` audit inspired by emerging agent-web standards such as `llms.txt`, AI crawler rules, discovery headers, protocol discovery, structured data, DNS-AID, and agentic commerce signals.
+
+For AI-native workflows, `sitepulse` can run as a local Model Context Protocol (MCP) server via `sitepulse mcp`, allowing Codex-compatible apps and other MCP clients to call sitemap checks, agent readiness audits, and config validation as structured tools.
 
 The project is designed for WordPress, WooCommerce, e-commerce, publisher, and SaaS websites that need to detect broken links, `404`/`500` errors, redirect issues, slow pages, metadata gaps, and whether the site is ready for AI agents and crawlers.
 
@@ -423,9 +425,14 @@ Please see [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## Additional documentation
 
+- [Usage guide](docs/usage.md)
+- [Configuration](docs/configuration.md)
 - [Export formats](docs/exports.md)
 - [Agent readiness audit](docs/agent-readiness.md)
-- [Configuration](docs/configuration.md)
+- [MCP support](docs/mcp.md)
+- [CI guide](docs/ci.md)
+- [Release process](docs/release.md)
+- [WordPress and WooCommerce guide](docs/wordpress-woocommerce.md)
 
 ## Versioning automation
 
@@ -441,10 +448,3 @@ Recommended commit prefixes:
 - ci: for CI changes
 
 When the release PR is merged, release-plz can create the Git tag and GitHub Release. The existing Release workflow then builds and uploads prebuilt binaries for that tag.
-
-## Additional documentation
-
-- [CI guide](docs/ci.md)
-- [Release process](docs/release.md)
-- [MCP support](docs/mcp.md)
-- [WordPress and WooCommerce guide](docs/wordpress-woocommerce.md)
