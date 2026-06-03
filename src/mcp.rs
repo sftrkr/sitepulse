@@ -1,6 +1,7 @@
 use crate::agent::{audit_agent_readiness, score_percent};
 use crate::checker::{check_urls, CheckOptions};
 use crate::config::load_check_config;
+use crate::export::{export_csv, export_html, export_json, export_junit, export_sarif};
 use crate::models::{RequestMethod, Summary, UrlCheckResult};
 use crate::report::summarize;
 use crate::robots::{fetch_robots_rules, filter_allowed_by_robots};
@@ -9,7 +10,7 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::io::{self, BufRead, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use url::Url;
 
 const MCP_PROTOCOL_VERSION: &str = "2024-11-05";
@@ -38,6 +39,9 @@ struct CheckSitemapArgs {
     max_urls: Option<usize>,
     retries: Option<usize>,
     sitemap_retries: Option<usize>,
+    delay_ms: Option<u64>,
+    dry_run: Option<bool>,
+    fail_on_errors: Option<bool>,
     method: Option<String>,
     analyze_meta: Option<bool>,
     same_host_only: Option<bool>,
@@ -47,6 +51,11 @@ struct CheckSitemapArgs {
     rate_limit_per_second: Option<u64>,
     per_host_concurrency: Option<usize>,
     per_host_rate_limit_per_second: Option<u64>,
+    export: Option<PathBuf>,
+    export_json: Option<PathBuf>,
+    export_html: Option<PathBuf>,
+    export_junit: Option<PathBuf>,
+    export_sarif: Option<PathBuf>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -66,6 +75,10 @@ struct ValidateConfigArgs {
 struct CheckSitemapOutput {
     discovered_urls: usize,
     checked_urls: usize,
+    dry_run: bool,
+    failed: bool,
+    failure_reason: Option<String>,
+    exported_files: Vec<String>,
     summary: Summary,
     results: Vec<UrlCheckResult>,
     agent_readiness: Option<crate::agent::AgentReadinessReport>,
@@ -158,6 +171,7 @@ async fn run_check_sitemap(args: CheckSitemapArgs) -> Result<CheckSitemapOutput>
     let timeout = args.timeout.unwrap_or(10);
     let user_agent = args
         .user_agent
+        .clone()
         .unwrap_or_else(|| DEFAULT_USER_AGENT.to_string());
     let mut urls = discover_urls_with_retries(
         &args.sitemap_url,
@@ -179,6 +193,20 @@ async fn run_check_sitemap(args: CheckSitemapArgs) -> Result<CheckSitemapOutput>
         urls.truncate(max_urls);
     }
 
+    if args.dry_run.unwrap_or(false) {
+        return Ok(CheckSitemapOutput {
+            discovered_urls,
+            checked_urls: 0,
+            dry_run: true,
+            failed: false,
+            failure_reason: None,
+            exported_files: Vec::new(),
+            summary: summarize(&[]),
+            results: Vec::new(),
+            agent_readiness: None,
+        });
+    }
+
     let method = match args
         .method
         .as_deref()
@@ -198,7 +226,7 @@ async fn run_check_sitemap(args: CheckSitemapArgs) -> Result<CheckSitemapOutput>
             method,
             analyze_meta: args.analyze_meta.unwrap_or(false),
             user_agent: &user_agent,
-            delay_ms: 0,
+            delay_ms: args.delay_ms.unwrap_or(0),
             rate_limit_per_second: args.rate_limit_per_second,
             per_host_concurrency: args.per_host_concurrency,
             per_host_rate_limit_per_second: args.per_host_rate_limit_per_second,
@@ -206,19 +234,62 @@ async fn run_check_sitemap(args: CheckSitemapArgs) -> Result<CheckSitemapOutput>
     )
     .await;
     let summary = summarize(&results);
+    let mut exported_files = Vec::new();
+    export_mcp_reports(&args, &results, &summary, &mut exported_files)?;
+
     let agent_readiness = if args.agent_ready.unwrap_or(false) {
         Some(audit_agent_readiness(&args.sitemap_url, timeout, &user_agent).await?)
     } else {
         None
     };
+    let failed =
+        args.fail_on_errors.unwrap_or(false) && results.iter().any(UrlCheckResult::is_error);
+    let failure_reason = failed.then(|| "URL errors found".to_string());
 
     Ok(CheckSitemapOutput {
         discovered_urls,
         checked_urls: results.len(),
+        dry_run: false,
+        failed,
+        failure_reason,
+        exported_files,
         summary,
         results,
         agent_readiness,
     })
+}
+
+fn export_mcp_reports(
+    args: &CheckSitemapArgs,
+    results: &[UrlCheckResult],
+    summary: &Summary,
+    exported_files: &mut Vec<String>,
+) -> Result<()> {
+    if let Some(path) = args.export.as_deref() {
+        export_csv(path, results)?;
+        exported_files.push(path_display(path));
+    }
+    if let Some(path) = args.export_json.as_deref() {
+        export_json(path, results)?;
+        exported_files.push(path_display(path));
+    }
+    if let Some(path) = args.export_html.as_deref() {
+        export_html(path, results, summary)?;
+        exported_files.push(path_display(path));
+    }
+    if let Some(path) = args.export_junit.as_deref() {
+        export_junit(path, results)?;
+        exported_files.push(path_display(path));
+    }
+    if let Some(path) = args.export_sarif.as_deref() {
+        export_sarif(path, results)?;
+        exported_files.push(path_display(path));
+    }
+    Ok(())
+}
+
+fn path_display(path: &Path) -> String {
+    path.display().to_string()
 }
 
 async fn run_agent_ready(args: AgentReadyArgs) -> Result<Value> {
@@ -260,7 +331,18 @@ fn tool_definitions() -> Value {
                     "analyze_meta": { "type": "boolean" },
                     "same_host_only": { "type": "boolean" },
                     "respect_robots": { "type": "boolean" },
-                    "agent_ready": { "type": "boolean" }
+                    "agent_ready": { "type": "boolean" },
+                    "delay_ms": { "type": "integer", "minimum": 0 },
+                    "dry_run": { "type": "boolean" },
+                    "fail_on_errors": { "type": "boolean" },
+                    "rate_limit_per_second": { "type": "integer", "minimum": 1 },
+                    "per_host_concurrency": { "type": "integer", "minimum": 1 },
+                    "per_host_rate_limit_per_second": { "type": "integer", "minimum": 1 },
+                    "export": { "type": "string" },
+                    "export_json": { "type": "string" },
+                    "export_html": { "type": "string" },
+                    "export_junit": { "type": "string" },
+                    "export_sarif": { "type": "string" }
                 }
             }
         },

@@ -81,3 +81,17 @@ Call `agent_ready`:
   }
 }
 ```
+
+## CLI parity additions
+
+The `check_sitemap` MCP tool supports the main operational CLI controls used by agents:
+
+- `delay_ms`
+- `dry_run`
+- `fail_on_errors`
+- `rate_limit_per_second`
+- `per_host_concurrency`
+- `per_host_rate_limit_per_second`
+- `export`, `export_json`, `export_html`, `export_junit`, `export_sarif`
+
+Unlike the CLI, MCP does not exit with process status codes for `fail_on_errors`; it returns `failed: true` and `failure_reason` in the structured tool result.
