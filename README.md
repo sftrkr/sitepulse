@@ -444,3 +444,4 @@ When the release PR is merged, release-plz can create the Git tag and GitHub Rel
 ## Additional documentation
 
 - [CI guide](docs/ci.md)
+- [Release process](docs/release.md)
