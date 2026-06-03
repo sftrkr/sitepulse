@@ -181,3 +181,62 @@ fn xml_response(body: String) -> Response<std::io::Cursor<Vec<u8>>> {
         Header::from_bytes("Content-Type", "application/xml").expect("failed to build header"),
     )
 }
+
+#[test]
+fn mcp_tools_list_exposes_sitepulse_tools() {
+    let output = run_sitepulse_with_stdin(
+        &["mcp"],
+        r#"{"jsonrpc":"2.0","id":1,"method":"tools/list"}
+"#,
+    );
+
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("check_sitemap"));
+    assert!(stdout.contains("agent_ready"));
+    assert!(stdout.contains("validate_config"));
+}
+
+#[test]
+fn mcp_validate_config_tool_accepts_example_config() {
+    let output = run_sitepulse_with_stdin(
+        &["mcp"],
+        r#"{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"validate_config","arguments":{"path":"examples/sitepulse.json"}}}
+"#,
+    );
+
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("valid"));
+    assert!(stdout.contains("true"));
+}
+
+fn run_sitepulse_with_stdin(args: &[&str], stdin: &str) -> std::process::Output {
+    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_sitepulse"))
+        .args(args)
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .expect("failed to spawn sitepulse");
+
+    {
+        use std::io::Write;
+        let mut child_stdin = child.stdin.take().expect("stdin unavailable");
+        child_stdin
+            .write_all(stdin.as_bytes())
+            .expect("failed to write stdin");
+    }
+
+    child
+        .wait_with_output()
+        .expect("failed to wait for sitepulse")
+}
