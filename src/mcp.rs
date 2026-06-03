@@ -10,11 +10,17 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::io::{self, BufRead, Write};
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use url::Url;
 
 const MCP_PROTOCOL_VERSION: &str = "2024-11-05";
 const DEFAULT_USER_AGENT: &str = "sitepulse/0.1 (+https://example.local)";
+
+#[derive(Debug, Clone, Default)]
+pub struct McpServerOptions {
+    pub export_root: Option<PathBuf>,
+    pub allow_absolute_export_paths: bool,
+}
 
 #[derive(Debug, Deserialize)]
 struct JsonRpcRequest {
@@ -84,7 +90,7 @@ struct CheckSitemapOutput {
     agent_readiness: Option<crate::agent::AgentReadinessReport>,
 }
 
-pub async fn run_mcp_server() -> Result<()> {
+pub async fn run_mcp_server(options: McpServerOptions) -> Result<()> {
     let stdin = io::stdin();
     let mut stdout = io::stdout();
 
@@ -95,7 +101,7 @@ pub async fn run_mcp_server() -> Result<()> {
         }
 
         let response = match serde_json::from_str::<JsonRpcRequest>(&line) {
-            Ok(request) => handle_request(request).await,
+            Ok(request) => handle_request(request, &options).await,
             Err(error) => Some(json!({
                 "jsonrpc": "2.0",
                 "id": null,
@@ -112,7 +118,7 @@ pub async fn run_mcp_server() -> Result<()> {
     Ok(())
 }
 
-async fn handle_request(request: JsonRpcRequest) -> Option<Value> {
+async fn handle_request(request: JsonRpcRequest, options: &McpServerOptions) -> Option<Value> {
     let id = request.id.clone();
     let result = match request.method.as_str() {
         "initialize" => Ok(json!({
@@ -122,7 +128,7 @@ async fn handle_request(request: JsonRpcRequest) -> Option<Value> {
         })),
         "notifications/initialized" => return None,
         "tools/list" => Ok(json!({ "tools": tool_definitions() })),
-        "tools/call" => call_tool(request.params).await,
+        "tools/call" => call_tool(request.params, options).await,
         _ => Err(json!({ "code": -32601, "message": "Method not found" })),
     };
 
@@ -132,14 +138,14 @@ async fn handle_request(request: JsonRpcRequest) -> Option<Value> {
     })
 }
 
-async fn call_tool(params: Value) -> std::result::Result<Value, Value> {
+async fn call_tool(params: Value, options: &McpServerOptions) -> std::result::Result<Value, Value> {
     let params: ToolCallParams = serde_json::from_value(params)
         .map_err(|error| rpc_error(-32602, &format!("Invalid tool call params: {error}")))?;
 
     let output = match params.name.as_str() {
         "check_sitemap" => {
             let args: CheckSitemapArgs = parse_args(params.arguments)?;
-            serde_json::to_value(run_check_sitemap(args).await.map_err(tool_error)?)
+            serde_json::to_value(run_check_sitemap(args, options).await.map_err(tool_error)?)
                 .map_err(|error| rpc_error(-32603, &error.to_string()))?
         }
         "agent_ready" => {
@@ -167,7 +173,10 @@ fn parse_args<T: for<'de> Deserialize<'de>>(value: Value) -> std::result::Result
         .map_err(|error| rpc_error(-32602, &format!("Invalid arguments: {error}")))
 }
 
-async fn run_check_sitemap(args: CheckSitemapArgs) -> Result<CheckSitemapOutput> {
+async fn run_check_sitemap(
+    args: CheckSitemapArgs,
+    options: &McpServerOptions,
+) -> Result<CheckSitemapOutput> {
     let timeout = args.timeout.unwrap_or(10);
     let user_agent = args
         .user_agent
@@ -235,7 +244,7 @@ async fn run_check_sitemap(args: CheckSitemapArgs) -> Result<CheckSitemapOutput>
     .await;
     let summary = summarize(&results);
     let mut exported_files = Vec::new();
-    export_mcp_reports(&args, &results, &summary, &mut exported_files)?;
+    export_mcp_reports(&args, &results, &summary, &mut exported_files, options)?;
 
     let agent_readiness = if args.agent_ready.unwrap_or(false) {
         Some(audit_agent_readiness(&args.sitemap_url, timeout, &user_agent).await?)
@@ -264,28 +273,61 @@ fn export_mcp_reports(
     results: &[UrlCheckResult],
     summary: &Summary,
     exported_files: &mut Vec<String>,
+    options: &McpServerOptions,
 ) -> Result<()> {
     if let Some(path) = args.export.as_deref() {
-        export_csv(path, results)?;
-        exported_files.push(path_display(path));
+        let path = validate_export_path(path, options)?;
+        export_csv(&path, results)?;
+        exported_files.push(path_display(&path));
     }
     if let Some(path) = args.export_json.as_deref() {
-        export_json(path, results)?;
-        exported_files.push(path_display(path));
+        let path = validate_export_path(path, options)?;
+        export_json(&path, results)?;
+        exported_files.push(path_display(&path));
     }
     if let Some(path) = args.export_html.as_deref() {
-        export_html(path, results, summary)?;
-        exported_files.push(path_display(path));
+        let path = validate_export_path(path, options)?;
+        export_html(&path, results, summary)?;
+        exported_files.push(path_display(&path));
     }
     if let Some(path) = args.export_junit.as_deref() {
-        export_junit(path, results)?;
-        exported_files.push(path_display(path));
+        let path = validate_export_path(path, options)?;
+        export_junit(&path, results)?;
+        exported_files.push(path_display(&path));
     }
     if let Some(path) = args.export_sarif.as_deref() {
-        export_sarif(path, results)?;
-        exported_files.push(path_display(path));
+        let path = validate_export_path(path, options)?;
+        export_sarif(&path, results)?;
+        exported_files.push(path_display(&path));
     }
     Ok(())
+}
+
+fn validate_export_path(path: &Path, options: &McpServerOptions) -> Result<PathBuf> {
+    if path
+        .components()
+        .any(|component| matches!(component, Component::ParentDir))
+    {
+        anyhow::bail!("MCP export paths must not contain '..'");
+    }
+
+    if path.is_absolute() {
+        if !options.allow_absolute_export_paths {
+            anyhow::bail!("absolute MCP export paths are disabled; use --allow-absolute-export-paths to enable them");
+        }
+        if let Some(root) = &options.export_root {
+            let root = root.canonicalize().unwrap_or_else(|_| root.clone());
+            if !path.starts_with(&root) {
+                anyhow::bail!("absolute MCP export path must be inside --export-root");
+            }
+        }
+        return Ok(path.to_path_buf());
+    }
+
+    Ok(match &options.export_root {
+        Some(root) => root.join(path),
+        None => path.to_path_buf(),
+    })
 }
 
 fn path_display(path: &Path) -> String {
@@ -397,6 +439,26 @@ fn filter_same_host(urls: Vec<String>, sitemap_url: &str) -> Result<Vec<String>>
 mod tests {
     use super::*;
 
+    #[test]
+    fn rejects_parent_dir_export_paths() {
+        let error = validate_export_path(Path::new("../report.json"), &McpServerOptions::default())
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("must not contain"));
+    }
+
+    #[test]
+    fn joins_relative_export_paths_to_root() {
+        let options = McpServerOptions {
+            export_root: Some(PathBuf::from("reports")),
+            allow_absolute_export_paths: false,
+        };
+        assert_eq!(
+            validate_export_path(Path::new("report.json"), &options).unwrap(),
+            PathBuf::from("reports/report.json")
+        );
+    }
+
     #[tokio::test]
     async fn handles_tools_list_request() {
         let request = JsonRpcRequest {
@@ -404,7 +466,9 @@ mod tests {
             method: "tools/list".to_string(),
             params: Value::Null,
         };
-        let response = handle_request(request).await.unwrap();
+        let response = handle_request(request, &McpServerOptions::default())
+            .await
+            .unwrap();
         assert!(response["result"]["tools"].as_array().unwrap().len() >= 3);
     }
 }

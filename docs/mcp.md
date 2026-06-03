@@ -95,3 +95,21 @@ The `check_sitemap` MCP tool supports the main operational CLI controls used by 
 - `export`, `export_json`, `export_html`, `export_junit`, `export_sarif`
 
 Unlike the CLI, MCP does not exit with process status codes for `fail_on_errors`; it returns `failed: true` and `failure_reason` in the structured tool result.
+
+## Export path safety
+
+By default, MCP export paths must be relative and must not contain `..` path traversal components.
+
+To restrict all relative export paths to a specific directory, start the server with:
+
+```bash
+sitepulse mcp --export-root ./reports
+```
+
+Absolute export paths are disabled by default. If a trusted local workflow needs them, opt in explicitly:
+
+```bash
+sitepulse mcp --allow-absolute-export-paths
+```
+
+When `--export-root` is set, absolute paths must also stay inside that directory.

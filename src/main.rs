@@ -31,8 +31,12 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Mcp => {
-            mcp::run_mcp_server().await?;
+        Commands::Mcp(args) => {
+            mcp::run_mcp_server(mcp::McpServerOptions {
+                export_root: args.export_root,
+                allow_absolute_export_paths: args.allow_absolute_export_paths,
+            })
+            .await?;
         }
         Commands::Config(config_command) => match config_command {
             cli::ConfigCommands::Validate(args) => {

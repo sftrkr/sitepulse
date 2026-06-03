@@ -23,13 +23,24 @@ pub enum Commands {
     Config(ConfigCommands),
 
     /// Run the sitepulse MCP server over stdio
-    Mcp,
+    Mcp(McpArgs),
 }
 
 #[derive(Debug, Subcommand)]
 pub enum ConfigCommands {
     /// Validate a JSON config file
     Validate(ConfigValidateArgs),
+}
+
+#[derive(Debug, Args)]
+pub struct McpArgs {
+    /// Restrict MCP export paths to this directory
+    #[arg(long)]
+    pub export_root: Option<PathBuf>,
+
+    /// Allow absolute export paths in MCP tool arguments
+    #[arg(long)]
+    pub allow_absolute_export_paths: bool,
 }
 
 #[derive(Debug, Args)]
