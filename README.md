@@ -13,6 +13,7 @@ The first working version has been implemented.
 Current features:
 
 - `sitepulse check <SITEMAP_URL>` command
+- `sitepulse mcp` command for Model Context Protocol integrations
 - Standard sitemap parsing
 - Sitemap index support
 - Gzip sitemap support (`.xml.gz`)
@@ -445,4 +446,5 @@ When the release PR is merged, release-plz can create the Git tag and GitHub Rel
 
 - [CI guide](docs/ci.md)
 - [Release process](docs/release.md)
+- [MCP support](docs/mcp.md)
 - [WordPress and WooCommerce guide](docs/wordpress-woocommerce.md)

@@ -21,6 +21,9 @@ pub enum Commands {
     /// Manage sitepulse configuration files
     #[command(subcommand)]
     Config(ConfigCommands),
+
+    /// Run the sitepulse MCP server over stdio
+    Mcp,
 }
 
 #[derive(Debug, Subcommand)]

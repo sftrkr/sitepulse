@@ -37,7 +37,7 @@ impl UrlCheckResult {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct Summary {
     pub total: usize,
     pub ok_2xx: usize,

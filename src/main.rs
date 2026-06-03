@@ -3,6 +3,7 @@ mod checker;
 mod cli;
 mod config;
 mod export;
+mod mcp;
 mod meta;
 mod models;
 mod report;
@@ -30,6 +31,9 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
+        Commands::Mcp => {
+            mcp::run_mcp_server().await?;
+        }
         Commands::Config(config_command) => match config_command {
             cli::ConfigCommands::Validate(args) => {
                 load_check_config(&args.path)?;
