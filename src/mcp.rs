@@ -22,6 +22,24 @@ pub struct McpServerOptions {
     pub allow_absolute_export_paths: bool,
 }
 
+fn print_mcp_startup_info(options: &McpServerOptions) {
+    eprintln!("sitepulse MCP server started");
+    eprintln!("Transport: stdio");
+    eprintln!("Command: sitepulse mcp");
+    eprintln!("Codex MCP config:");
+    eprintln!(r#"{{"mcpServers":{{"sitepulse":{{"command":"sitepulse","args":["mcp"]}}}}}}"#);
+    eprintln!("Available tools: check_sitemap, agent_ready, validate_config");
+    if let Some(export_root) = &options.export_root {
+        eprintln!("MCP export root: {}", export_root.display());
+    }
+    if options.allow_absolute_export_paths {
+        eprintln!("Absolute MCP export paths: enabled");
+    } else {
+        eprintln!("Absolute MCP export paths: disabled");
+    }
+    eprintln!("Waiting for MCP JSON-RPC messages on stdin...");
+}
+
 #[derive(Debug, Deserialize)]
 struct JsonRpcRequest {
     id: Option<Value>,
@@ -91,6 +109,7 @@ struct CheckSitemapOutput {
 }
 
 pub async fn run_mcp_server(options: McpServerOptions) -> Result<()> {
+    print_mcp_startup_info(&options);
     let stdin = io::stdin();
     let mut stdout = io::stdout();
 

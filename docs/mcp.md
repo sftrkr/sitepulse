@@ -113,3 +113,17 @@ sitepulse mcp --allow-absolute-export-paths
 ```
 
 When `--export-root` is set, absolute paths must also stay inside that directory.
+
+## Startup information
+
+When started with `sitepulse mcp`, the server prints connection information to stderr so it does not interfere with the stdio JSON-RPC protocol on stdout.
+
+The startup message includes:
+
+- transport: stdio
+- command: `sitepulse mcp`
+- a Codex-compatible MCP config snippet
+- available MCP tools
+- export path safety settings
+
+This makes it easier to confirm that the MCP server is running and to copy the required client configuration.
