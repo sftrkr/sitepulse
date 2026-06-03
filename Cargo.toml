@@ -2,7 +2,7 @@
 name = "sitepulse"
 version = "0.2.0"
 edition = "2021"
-description = "CLI tool to check sitemap URLs for status, redirects, and response times"
+description = "MCP-enabled CLI for sitemap health checks, technical SEO, CI reports, and AI agent readiness audits"
 license = "MIT"
 
 [dependencies]
