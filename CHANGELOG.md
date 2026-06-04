@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-06-04
+
+### Added
+
+- MCP stdio server via `sitepulse mcp` for Codex-compatible and MCP-capable AI clients.
+- MCP tools for sitemap checks, agent readiness audits, and config validation.
+- MCP startup connection information and Codex config snippet on stderr.
+- MCP export path safety controls with `--export-root` and `--allow-absolute-export-paths`.
+- MCP `check_sitemap` support for config files, dry-run, exports, fail-on-errors, and politeness controls.
+- MCP CLI integration tests and expanded MCP documentation.
+
+### Changed
+
+- Updated README introduction and package description to emphasize MCP-enabled site intelligence.
+- Refreshed documentation links and usage guidance.
+
 ## [0.2.0] - 2026-06-03
 
 ### Added
@@ -41,3 +57,5 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 [0.1.0]: https://github.com/sftrkr/sitepulse/releases/tag/v0.1.0
 
 [0.2.0]: https://github.com/sftrkr/sitepulse/compare/v0.1.0...v0.2.0
+
+[0.3.0]: https://github.com/sftrkr/sitepulse/compare/v0.2.0...v0.3.0

@@ -1,6 +1,6 @@
 [package]
 name = "sitepulse"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 description = "MCP-enabled CLI for sitemap health checks, technical SEO, CI reports, and AI agent readiness audits"
 license = "MIT"
